@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PS5 FFPFSC PRO — backend wrapper (MkPFS 0.0.8+)"""
+"""PS5 FFPFSC PRO — backend wrapper (MkPFS 0.0.9+)"""
 from __future__ import annotations  # makes str|None / list[X] work on Python 3.7+
 import sys
 import os
@@ -148,7 +148,7 @@ def _mkpfs_error_hint(exc: subprocess.CalledProcessError, output_path: Path) -> 
             f"[ERROR]   OUTPUT folder  ->  ensure the drive is NTFS (not exFAT/FAT32) with enough space\n"
             f"[ERROR]   TEMP folder    ->  needs ~1.5x the game size of free space during compression\n"
             f"[ERROR]   CPU cores      ->  try lowering to 2 or 1 if RAM could be the cause\n"
-            f"[ERROR]   Level          ->  try 5 if the default (7) runs out of memory",
+            f"[ERROR]   Level          ->  try 5 if the default (9) runs out of memory",
             flush=True,
         )
 
@@ -183,14 +183,14 @@ def _locate_mkpfs() -> tuple[list[str], str | None]:
     # Auto-install via pip
     print("[INFO] MkPFS not found. Installing automatically via pip...")
     res = subprocess.run(
-        [sys.executable, "-m", "pip", "install", "mkpfs==0.0.8"],
+        [sys.executable, "-m", "pip", "install", "mkpfs==0.0.9"],
         capture_output=True, text=True,
     )
     if res.returncode != 0:
         print("[ERROR] Failed to install mkpfs. Please install it manually: pip install mkpfs")
         print(res.stderr)
         sys.exit(1)
-    print("[OK] MkPFS 0.0.8 installed successfully.")
+    print("[OK] MkPFS 0.0.9 installed successfully.")
     return [sys.executable, "-m", "mkpfs"], None
 
 
@@ -198,30 +198,29 @@ def _locate_mkpfs() -> tuple[list[str], str | None]:
 # MkPFS wrappers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def pack_folder_uncompressed(
+def pack_folder_single_pass(
     game_folder: Path,
-    pfs_path: Path,
+    ffpfsc_path: Path,
     mkpfs_cmd_base: list[str],
     mkpfs_cwd: str | None,
     *,
     verify_enabled: bool = False,
-    compression_level: int = 7,
+    compression_level: int = 9,
     cpu_count: int = 0,
     threshold_gain: int = 5,
     block_size: str = "auto",
     verbose: bool = False,
     temp_folder: Path | None = None,
 ) -> None:
-    print(f"[INFO] Packing folder {game_folder.name} to uncompressed PFS image {pfs_path.name}...")
+    print(f"[INFO] Packing {game_folder.name} → {ffpfsc_path.name} (single-pass exFAT+zstd)...")
     cmd = mkpfs_cmd_base + [
         "pack", "folder",
-        "--no-compress",
-        "--no-adjust-output-file-extension",
         "--version", "PS5",
         "--inode-bits", "32",
+        "--compression-level", str(compression_level),
+        "--cpu-count", str(cpu_count),
+        "--threshold-gain", str(threshold_gain),
     ]
-    # Only pass --block-size when non-default so older pip-installed mkpfs versions
-    # (< 0.0.7 which introduced this flag) don't fail with "unrecognized argument".
     if str(block_size) != "auto":
         cmd += ["--block-size", str(block_size)]
     if temp_folder:
@@ -233,14 +232,14 @@ def pack_folder_uncompressed(
         cmd.append("--verify")
     else:
         print("[INFO] MkPFS post-build verify is disabled by default to avoid MemoryError on some systems.", flush=True)
-    cmd += [str(game_folder), str(pfs_path)]
+    cmd += [str(game_folder), str(ffpfsc_path)]
     print(f"[INFO] Running: {' '.join(cmd)}", flush=True)
     try:
         subprocess.run(cmd, cwd=mkpfs_cwd, check=True)
     except subprocess.CalledProcessError as e:
-        _mkpfs_error_hint(e, pfs_path)
+        _mkpfs_error_hint(e, ffpfsc_path)
         sys.exit(1)
-    print(f"[OK] Uncompressed PFS creation complete: {pfs_path}")
+    print(f"[OK] Image created: {ffpfsc_path}")
 
 
 def compress_file_to_ffpfsc(
@@ -249,7 +248,7 @@ def compress_file_to_ffpfsc(
     mkpfs_cmd_base: list[str],
     mkpfs_cwd: str | None,
     *,
-    compression_level: int = 7,
+    compression_level: int = 9,
     cpu_count: int = 0,
     threshold_gain: int = 5,
     block_size: str = "auto",
@@ -297,9 +296,9 @@ def main() -> None:
     parser.add_argument("--batch",        action="store_true", help="Process all games/exfat files found under source")
     parser.add_argument("-f", "--force", "--overwrite", dest="overwrite", action="store_true", help="Overwrite existing files")
     parser.add_argument("--password",     type=str, help="Password for ZIP/RAR archives")
-    # MkPFS 0.0.8 tuning flags (forwarded to mkpfs pack file)
-    parser.add_argument("--compression-level", type=int, default=7,  metavar="0-9",
-                        help="Zlib compression level (0=store, 9=max, default: 7)")
+    # MkPFS 0.0.9 tuning flags (forwarded to mkpfs pack folder / pack file)
+    parser.add_argument("--compression-level", type=int, default=9,  metavar="0-9",
+                        help="Zlib compression level (0=store, 9=max, default: 9)")
     parser.add_argument("--cpu-count",    type=int, default=0,  metavar="N",
                         help="CPU cores for compression (0=auto, default: 0)")
     parser.add_argument("--threshold-gain", type=int, default=5, metavar="PCT",
@@ -476,26 +475,14 @@ def main() -> None:
                     **pack_kwargs,
                 )
             else:
-                # Game folder: pack uncompressed PFS, then compress -> .ffpfsc
-                with tempfile.TemporaryDirectory(dir=user_temp) as temp_dir:
-                    temp_pfs = Path(temp_dir) / "pfs_image.dat"
-
-                    pack_folder_uncompressed(
-                        item, temp_pfs, mkpfs_cmd_base, mkpfs_cwd,
-                        verify_enabled=args.verify,
-                        temp_folder=Path(temp_dir),
-                        **pack_kwargs,
-                    )
-                    compress_file_to_ffpfsc(
-                        temp_pfs, current_ffpfs_path, mkpfs_cmd_base, mkpfs_cwd,
-                        temp_folder=Path(temp_dir),
-                        **pack_kwargs,
-                    )
-
-                    if args.keep_pfs:
-                        saved = current_ffpfs_path.parent / f"{title_id}_nested_pfs.dat"
-                        print(f"[INFO] Saving intermediate PFS image to {saved}...")
-                        shutil.copy2(temp_pfs, saved)
+                # Game folder: single-pass exFAT → .ffpfsc (mkpfs 0.0.9+)
+                # --keep-pfs is silently ignored for folder sources (no intermediate file)
+                pack_folder_single_pass(
+                    item, current_ffpfs_path, mkpfs_cmd_base, mkpfs_cwd,
+                    verify_enabled=args.verify,
+                    temp_folder=user_temp,
+                    **pack_kwargs,
+                )
 
     print("\n[SUCCESS] All operations completed successfully!")
 

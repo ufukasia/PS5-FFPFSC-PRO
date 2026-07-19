@@ -53,7 +53,7 @@ APP_NAME = "PS5 FFPFSC PRO"
 APP_VERSION = "1.3.0"
 BACKEND_NAME = "bizkut/ps5-ffpfs-cli"
 MKPFS_NAME    = "MkPFS"
-MKPFS_VERSION = "0.0.8"
+MKPFS_VERSION = "0.0.9"
 
 APP_DIR = Path(os.getenv("APPDATA", str(Path.home()))) / "PS5_FFPFSC_PRO_BIZKUT"
 RAW_LOG_FILE = APP_DIR / "raw_tool_output.log"
@@ -1543,14 +1543,12 @@ class GameItem:
 
 class CLIWorker(threading.Thread):
     WEIGHTS = {
-        "Scanning Files":      (0,    5),
-        "Reading Game":        (5,   15),
-        "Creating Temp PFS":   (15,  38),
-        "Verifying Output":    (38,  48),   # verify of the temp PFS image
-        "Compressing":         (48,  88),   # outer MkPFS container compression (the big step)
-        "Writing Final Image": (88,  97),   # streaming .ffpfsc write
-        "Cleaning Up":         (97, 100),
-        "Complete":            (100, 100),
+        "Scanning Files":   (0,    5),
+        "Reading Game":     (5,   10),
+        "Building Image":   (10,  92),   # single-pass: pack + compress + write in one step
+        "Verifying Output": (92,  96),
+        "Cleaning Up":      (96, 100),
+        "Complete":         (100, 100),
     }
 
     def __init__(self, app, item, cmd, cwd, output_dir, temp_dir):
@@ -1577,9 +1575,7 @@ class CLIWorker(threading.Thread):
         self.stage_progress = {
             "Scanning Files": 0,
             "Reading Game": 0,
-            "Creating Temp PFS": 0,
-            "Compressing": 0,
-            "Writing Final Image": 0,
+            "Building Image": 0,
             "Verifying Output": 0,
             "Cleaning Up": 0,
             "Complete": 0,
@@ -1747,26 +1743,6 @@ class CLIWorker(threading.Thread):
         # Use the FIRST WORD of the label for reliable matching regardless of trailing speed/ETA.
         first_word = label.strip().lower().split()[0] if label.strip() else ""
 
-        # ── Outer MkPFS container compression (check BEFORE .ffpfsc so it wins) ─
-        # e.g. "Compressing pfs_image.dat to outer container PPSA20396.ffpfsc using MkPFS"
-        if "outer container" in text or (first_word in ("compress", "compressing") and "mkpfs" in text.lower()):
-            return "Compressing"
-
-        # ── Final output write ────────────────────────────────────────────────
-        # ".ffpfsc" in text covers both the streaming write and any info lines.
-        if ".ffpfsc" in text or "final image" in text or "final output" in text:
-            return "Writing Final Image"
-
-        # ── Backend label "write" ─────────────────────────────────────────────
-        # Emitted during temp-PFS construction AND final image write.
-        # After verify is done (new stage order), any "write" must be the final image.
-        if first_word in ("write", "writing"):
-            if (self.stage_progress.get("Verifying Output", 0) >= 100
-                    or self.stage_progress.get("Compressing", 0) > 0):
-                return "Writing Final Image"
-            else:
-                return "Creating Temp PFS"
-
         # ── Scan / discovery ──────────────────────────────────────────────────
         if first_word in ("scan", "scanning") or "discover" in text:
             return "Scanning Files"
@@ -1775,9 +1751,16 @@ class CLIWorker(threading.Thread):
         if first_word in ("read", "reading"):
             return "Reading Game"
 
-        # ── Outer compression (generic — "Compressing N files") ──────────────
-        if first_word in ("compress", "compressing") or "compress" in text:
-            return "Compressing"
+        # ── Single-pass build (mkpfs 0.0.9: compress + write are one stage) ──
+        # "compress @ MB/s", "write @ MB/s", "building exfat image from …"
+        if first_word in ("compress", "compressing",
+                          "write", "writing",
+                          "building", "pack", "packing"):
+            return "Building Image"
+        if "exfat" in text or ".ffpfsc" in text or "outer container" in text:
+            return "Building Image"
+        if "compress" in text:
+            return "Building Image"
 
         # ── Verify (only from a real progress bar, not plain-text messages) ───
         if first_word in ("verify", "verifying"):
@@ -1806,9 +1789,8 @@ class CLIWorker(threading.Thread):
     # Must be a plain tuple/list literal here — _STAGE_DEFS is defined later in
     # the module (after CLIWorker), so we can't reference it at class-body time.
     _STAGE_ORDER = [
-        "Scanning Files", "Reading Game", "Creating Temp PFS",
-        "Verifying Output", "Compressing", "Writing Final Image",
-        "Cleaning Up", "Complete",
+        "Scanning Files", "Reading Game", "Building Image",
+        "Verifying Output", "Cleaning Up", "Complete",
     ]
 
     def _set_stage(self, stage, pct, label="", eta="—", force=False):
@@ -1819,28 +1801,22 @@ class CLIWorker(threading.Thread):
                 return
         self.phase = stage
         pct = max(0, min(100, pct))
-        if stage == "Creating Temp PFS" and pct >= 100:
+        if stage == "Building Image" and pct >= 100:
             pct = 99
         self.stage_progress[stage] = max(self.stage_progress.get(stage, 0), pct)
 
         # When a later stage begins, snap earlier stages to 100% so the
-        # breadcrumbs never show a stale partial % (e.g. "Temp PFS 5%").
+        # breadcrumbs never show a stale partial % (e.g. "Build 5%").
         # This handles backends that stop emitting progress before 100%.
-        if stage == "Verifying Output":
-            self.stage_progress["Creating Temp PFS"] = 100
-            self.stage_progress["Reading Game"]       = 100
-            self.stage_progress["Scanning Files"]     = 100
-        elif stage == "Compressing":
-            self.stage_progress["Verifying Output"]   = 100
-            self.stage_progress["Creating Temp PFS"]  = 100
-            self.stage_progress["Reading Game"]        = 100
-        elif stage == "Writing Final Image":
-            self.stage_progress["Compressing"]        = 100
-            self.stage_progress["Verifying Output"]   = 100
-            self.stage_progress["Creating Temp PFS"]  = 100
+        if stage == "Building Image":
+            self.stage_progress["Reading Game"]   = 100
+            self.stage_progress["Scanning Files"] = 100
+        elif stage == "Verifying Output":
+            self.stage_progress["Building Image"] = 100
+            self.stage_progress["Reading Game"]   = 100
+            self.stage_progress["Scanning Files"] = 100
         elif stage in ("Cleaning Up", "Complete"):
-            for s in ("Scanning Files", "Reading Game", "Creating Temp PFS",
-                      "Verifying Output", "Compressing", "Writing Final Image"):
+            for s in ("Scanning Files", "Reading Game", "Building Image", "Verifying Output"):
                 if self.stage_progress.get(s, 0) > 0:
                     self.stage_progress[s] = 100
 
@@ -1848,20 +1824,13 @@ class CLIWorker(threading.Thread):
         overall = self._overall_for_stage(stage, self.stage_progress[stage])
 
         detail = label or f"{stage} is active."
-        if stage == "Creating Temp PFS":
-            detail = ("Building temporary PFS image. "
+        if stage == "Building Image":
+            detail = (label or
+                      "Building exFAT image — packing and compressing in a single pass. "
                       "Large games may look frozen here — the backend is still working. "
                       "Do NOT close the app.")
         elif stage == "Cleaning Up":
             detail = "Cleaning up temporary files. Please wait before closing the app."
-        elif stage == "Writing Final Image":
-            # Backend writes the final .ffpfsc silently (no progress bars) — the display
-            # may show 0% for a while then snap to 100% when the write finishes.
-            detail = ("Writing the final .ffpfsc output file. "
-                      "This stage may show 0% — the backend is writing silently. "
-                      "Do NOT close the app.")
-        elif stage == "Compressing" and not label:
-            detail = "Compressing game data."
 
         now = time.time()
         bucket = (int(self.stage_progress[stage]) // 5) * 5
@@ -1998,16 +1967,7 @@ class CLIWorker(threading.Thread):
 
             if stage == "Reading Game" and pct >= 100:
                 self._set_stage("Reading Game", 100, label, eta)
-                self._set_stage("Creating Temp PFS", 0, "Building temporary PFS image. Do NOT close the app.", "—")
-                return
-
-            if stage == "Compressing" and pct >= 100:
-                self._set_stage("Compressing", 100, label, eta)
-                # Auto-advance: compression finished — final image write is next.
-                # If the backend emits its own "write" progress bars for the final
-                # output, they will continue updating "Writing Final Image" from here.
-                # If it writes silently, this at least moves the display off "Compressing".
-                self._set_stage("Writing Final Image", 0, "Writing final .ffpfsc output file…", "—")
+                self._set_stage("Building Image", 0, "Building exFAT image…", "—")
                 return
 
             self._set_stage(stage, pct, label, eta)
@@ -2029,25 +1989,21 @@ class CLIWorker(threading.Thread):
         # IMPORTANT: only use very specific phrases here — broad keyword matches on
         # paths (e.g. _ffpfsc_temp, pfs_image.dat) fire too early because those
         # strings appear in the parameter dump before scanning even begins.
-        if "writing pfs image to" in lower:
-            # Only the exact "Writing PFS image to <path>" line marks temp-PFS start.
-            # Use 0% so the subsequent [###] x% write progress bars can own the percentage
-            # cleanly (the max() guard in _set_stage would pin it at 5 otherwise).
-            self._set_stage("Creating Temp PFS", 0, "Building PFS image…")
-        elif ".ffpfsc" in lower and self.stage_progress.get("Compressing", 0) > 0:
-            # A line mentioning the final .ffpfsc output after compression has run
-            # means the final image is being written (or has just been written).
-            self._set_stage("Writing Final Image",
-                            max(5, self.stage_progress.get("Writing Final Image", 0)),
-                            "Writing final .ffpfsc output file…")
-        elif "successfully wrote" in lower or "pfs creation complete" in lower:
-            # PFS image fully written — advance to Compressing if not already there
-            if self.stage_progress.get("Compressing", 0) == 0:
-                self._set_stage("Creating Temp PFS", 100, line)
-        # NOTE: "Verifying Output" is NOT triggered from plain-text here because
-        # lines like "MkPFS post-build verify is disabled..." contain "verify" and
-        # would fire this stage at the very start of the run, blocking everything else.
-        # Verification stage is advanced only by progress bars in _stage_from_label.
+        if "building exfat image from" in lower:
+            # mkpfs 0.0.9 single-pass start message
+            self._set_stage("Building Image", 0, "Building exFAT image (single-pass)…")
+        elif "image created successfully" in lower:
+            # mkpfs 0.0.9 success message — image write complete
+            self._set_stage("Building Image", 100, line)
+        elif "running post-pack" in lower or "running post-create check" in lower:
+            # mkpfs 0.0.9 post-build verification step
+            self._set_stage("Verifying Output", 0, "Running post-pack verification…")
+        elif "build summary" in lower:
+            self._set_stage("Building Image", 100, line)
+        # NOTE: "Verifying Output" is NOT triggered from generic "verify" plain-text
+        # because "MkPFS post-build verify is disabled…" fires at run start.
+        # Verification stage is advanced only by progress bars in _stage_from_label
+        # or the specific "running post-pack" message above.
         # NOTE: "Complete" stage is intentionally NOT set here — only by run() after exit.
 
         tag = "INFO"
@@ -2167,14 +2123,12 @@ class CLIWorker(threading.Thread):
 
 # Stage definitions: (full backend name, short display label)
 _STAGE_DEFS = [
-    ("Scanning Files",      "Scan"),
-    ("Reading Game",        "Read"),
-    ("Creating Temp PFS",   "Temp PFS"),
-    ("Compressing",         "Compress"),
-    ("Writing Final Image", "Write"),
-    ("Verifying Output",    "Verify"),
-    ("Cleaning Up",         "Cleanup"),
-    ("Complete",            "Done"),
+    ("Scanning Files",   "Scan"),
+    ("Reading Game",     "Read"),
+    ("Building Image",   "Build"),
+    ("Verifying Output", "Verify"),
+    ("Cleaning Up",      "Cleanup"),
+    ("Complete",         "Done"),
 ]
 
 # ─── Main Application ──────────────────────────────────────────────────────────
@@ -2257,7 +2211,7 @@ class App:
         self._saved_ampr_folder     = settings.get("ampr_folder", "")
         self._saved_per_game_folder = settings.get("per_game_folder", False)
         self._saved_auto_clear_temp = settings.get("auto_clear_temp", False)
-        self._saved_compression_level = settings.get("compression_level", 7)
+        self._saved_compression_level = settings.get("compression_level", 9)
         self._saved_cpu_count = settings.get("cpu_count", 0)
         self._saved_block_size = settings.get("block_size", "auto")
 
@@ -3498,6 +3452,15 @@ class App:
         CHANGELOG = """\
 v1.3.0  (current)
 ──────────────────────────────────────────────────
+MkPFS 0.0.9 — SINGLE-PASS PIPELINE
+  • pack folder now streams directly to .ffpfsc in
+    one pass — no intermediate temp PFS file needed
+  • Compression default raised 7 → 9 (better output)
+  • AMPR index built automatically by mkpfs when
+    fakelib is present (app no longer builds it)
+  • Stage display updated: Scan → Read → Build →
+    Verify → Cleanup (Build replaces 3 old stages)
+
 NEW
   • Community compatibility list — fetch 5,000+ game
     reports from the live Google Sheet directly in-app
@@ -4286,9 +4249,9 @@ v1.0
             cmd.append("--keep-pfs")
         if self.verify_output_var.get():
             cmd.append("--verify")
-        # MkPFS 0.0.8 tuning
+        # MkPFS 0.0.9 tuning
         comp_level = self.compression_level_var.get()
-        if comp_level != 7:  # only pass if non-default
+        if comp_level != 9:  # only pass if non-default
             cmd += ["--compression-level", str(comp_level)]
         cpu = self.cpu_count_var.get()
         if cpu != 0:
@@ -4417,7 +4380,7 @@ v1.0
                 self._update_ampr_status(item)
 
         self._inject_ampr_files(item)
-        self._build_ampr_index(item)
+        # mkpfs 0.0.9 auto-builds ampr_emu.index when fakelib/libSceAmpr.sprx is present
 
         self.worker = CLIWorker(self, item, cmd, cwd, out_dir, temp_dir)
         self.worker.start()
@@ -4721,9 +4684,8 @@ v1.0
                 self._ensure_ampr_folder()
                 self._update_ampr_status(item)
 
-        # Inject AMPR emu files then build the /app0 path index
+        # Inject AMPR emu files — mkpfs 0.0.9 auto-builds ampr_emu.index
         self._inject_ampr_files(item)
-        self._build_ampr_index(item)
 
         # Show space diagnostics dialog — opens instantly, drive type detects in background
         diag = SpaceDiagnosticsDialog(self.root, item, temp_dir, out_dir)
@@ -4772,7 +4734,7 @@ v1.0
         self.status_update("Cancelling", "Cancel requested.", "Cancelling", 0, 0, "—", "—", "—")
 
     def status_update(self, title, detail, stage, stage_pct, overall_pct, elapsed, speed, eta):
-        if stage == "Creating Temp PFS" and stage_pct >= 100:
+        if stage == "Building Image" and stage_pct >= 100:
             stage_pct = 99
         self.status_q.put((title, detail, stage, stage_pct, overall_pct, elapsed, speed, eta))
 
@@ -5642,7 +5604,7 @@ v1.0
             if current_idx >= 0 and i < current_idx:
                 lbl.configure(text=f"✓ {short}", text_color=("#1a7a40", "#4ade80"))
             elif i == current_idx:
-                dp = min(int(pct), 99) if full == "Creating Temp PFS" else int(pct)
+                dp = min(int(pct), 99) if full == "Building Image" else int(pct)
                 lbl.configure(text=f"▶ {short} {dp}%", text_color=YELLOW)
             else:
                 lbl.configure(text=f"○ {short}", text_color=MUTED)

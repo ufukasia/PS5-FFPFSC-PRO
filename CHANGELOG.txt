@@ -6,6 +6,21 @@
   v1.3.0  (current)
 ────────────────────────────────────────────────────────────────────────
 
+MkPFS 0.0.9 — SINGLE-PASS PIPELINE UPGRADE
+
+  • pack folder now streams directly to a final exFAT-wrapped .ffpfsc
+    in a single pass — no intermediate pfs_image.dat temp file needed,
+    requiring ~50% less working temp space for folder sources
+  • Compression default raised from 7 → 9 for better output size
+  • AMPR index (ampr_emu.index) is now built automatically by mkpfs
+    when fakelib/libSceAmpr.sprx is present — redundant app-side index
+    builder removed
+  • Stage display updated to match new single-pass pipeline:
+      Scan → Read → Build → Verify → Cleanup
+    ("Build" replaces the old Temp PFS + Compress + Write stages)
+  • Stage weights rebalanced: Build Image gets 82% of the bar
+    (accounts for the combined pack + compress + write work)
+
 NEW FEATURES
 
   COMMUNITY COMPATIBILITY
