@@ -3,7 +3,99 @@
 ════════════════════════════════════════════════════════════════════════
 
 ────────────────────────────────────────────────────────────────────────
-  v1.3.0  (current)
+  v1.4.0  (current)   —   fork by ufukasia
+────────────────────────────────────────────────────────────────────────
+
+Fork of KINGDKAK/PS5-FFPFSC-PRO. Everything below is what this fork adds
+on top of upstream v1.3.0; the compression backend itself is unchanged.
+
+FLEXIBLE LAYOUT
+
+  • The window now opens to fit the usable desktop instead of a fixed
+    1400x960, and honours the Windows display scaling factor. At 125% on
+    a 1536x864 laptop the old build asked for 1750x1200 and pushed the
+    CPU-core slider and other controls off the screen entirely
+  • The three content columns (queue, progress, details) sit behind
+    draggable sashes — each one can be widened or narrowed freely
+  • Every column is independently scrollable, so no control is stranded
+    below the window edge however small the window gets
+  • Labels re-wrap live while a column is resized (debounced, so the
+    resize cannot feed back into itself)
+  • Minimum window size lowered from 1100x760 to fit small displays
+  • New "Reset Layout" button restores the default pane sizes after a
+    sash has been dragged all the way to an edge
+  • Queue list gained a horizontal scrollbar — long entries were being
+    cut off at the panel edge — and the mouse wheel now scrolls the list
+    under the pointer instead of the column behind it
+
+TURKISH / ENGLISH INTERFACE
+
+  • New EN / TR button in the header switches the whole interface live
+  • The chosen language is saved and applied before the UI is built
+  • Runtime output (backend log lines, error details, changelog, FAQ)
+    deliberately stays English so logs remain shareable for support
+
+SKIP ALREADY-COMPRESSED GAMES
+
+  • New option "Skip games that are already compressed" (on by default,
+    saved to settings.json)
+  • Finished games are drained from the front of the queue before a
+    batch starts, so a batch walks straight past them
+  • The backend enforces the same rule with a new --skip-existing flag,
+    which also covers --batch runs the GUI cannot pre-check
+  • Both the old TITLEID.ffpfsc and the new TITLEID-Game Name.ffpfsc
+    layouts are recognised, so games built by earlier versions count
+
+OUTPUT NAMED AFTER THE GAME
+
+  • Output files are now named TITLEID-Game Name.ffpfsc instead of
+    TITLEID.ffpfsc — the name comes from sce_sys/param.json, falling
+    back to the source folder name
+  • Characters Windows rejects in a filename are replaced rather than
+    dropped ("NieR:Automata" -> "NieR Automata"), the name is trimmed
+    to a sane length, and a title ID already present in the source name
+    is not repeated ("PPSA03974-PPSA03974 Cyberpunk 2077")
+
+FIXED
+
+  • UnicodeEncodeError could kill an otherwise finished build on
+    Turkish (cp1254) and other non-UTF-8 Windows locales: when stdout
+    is a pipe Python falls back to the ANSI codepage and cannot encode
+    the icons mkpfs prints. stdout/stderr and every child process are
+    forced to UTF-8 now, and log output degrades instead of raising
+  • exFAT output drives were reported as having a 4 GB per-file limit.
+    Only FAT32/FAT has that cap — exFAT exists precisely to lift it, so
+    it is a valid output target and is no longer flagged
+  • Free space is now checked against the rule mkpfs actually applies —
+    free space >= the full UNCOMPRESSED source size — before the run
+    starts, instead of failing after the setup work is already done
+  • The Drive Space Diagnostics dialog blocks a run that cannot succeed
+    (FAT32 cap or too little free space) instead of auto-proceeding
+    into a certain failure, and shows what is missing and by how much
+  • mkpfs failure hints no longer blame the output filesystem for
+    unrelated failures; the reported cause is the one that holds
+  • mkpfs "does not have enough space" / "not enough free space" output
+    is now recognised and explained instead of falling through to the
+    generic error
+  • Option checkboxes that map to settings.json (skip existing,
+    auto-clear temp) are saved the moment they are toggled
+  • The updater now tracks this fork's releases, and a repository with
+    no published release yet reports "up to date" instead of an error
+
+TÜRKÇE ÖZET
+
+  • Esnek arayüz: pencere ekrana ve ölçeklemeye göre açılıyor, üç sütun
+    sürüklenerek genişletilebiliyor, her sütun ayrı kaydırılıyor,
+    "Reset Layout" ile varsayılan düzene dönülüyor
+  • Arayüz Türkçe / İngilizce arasında anında değiştirilebiliyor
+  • Zaten sıkıştırılmış oyunlar atlanıyor (kuyrukta ve arka uçta)
+  • Çıktı dosyası oyun adıyla: OYUNKODU-Oyun Adı.ffpfsc
+  • Türkçe Windows'ta derlemeyi öldüren UTF-8 hatası, exFAT'in yanlışlıkla
+    4 GB sınırlı sayılması, boş alan denetiminin yanlış hesaplanması ve
+    bir dizi başka hata düzeltildi
+
+────────────────────────────────────────────────────────────────────────
+  v1.3.0
 ────────────────────────────────────────────────────────────────────────
 
 MkPFS 0.0.9 — SINGLE-PASS PIPELINE UPGRADE

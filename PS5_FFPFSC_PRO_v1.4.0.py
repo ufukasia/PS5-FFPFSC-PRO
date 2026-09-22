@@ -50,7 +50,7 @@ except Exception:
     _HAS_DND = False
 
 APP_NAME = "PS5 FFPFSC PRO"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 BACKEND_NAME = "bizkut/ps5-ffpfs-cli"
 MKPFS_NAME    = "MkPFS"
 MKPFS_VERSION = "0.0.9"
@@ -61,9 +61,13 @@ FINAL_REPORT_FILE = APP_DIR / "last_result_report.txt"
 HISTORY_FILE = APP_DIR / "history.json"
 SETTINGS_FILE = APP_DIR / "settings.json"
 COMPAT_FILE = APP_DIR / "compatibility.json"
-GITHUB_REPO         = "KINGDKAK/PS5-FFPFSC-PRO"
+# This fork ships its own builds, so the updater tracks the fork's releases.
+# The upstream project is kept here for the About / credits links.
+GITHUB_REPO         = "ufukasia/PS5-FFPFSC-PRO"
+UPSTREAM_REPO       = "KINGDKAK/PS5-FFPFSC-PRO"
 GITHUB_API_LATEST   = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 GITHUB_RELEASES_URL = f"https://github.com/{GITHUB_REPO}/releases"
+UPSTREAM_URL        = f"https://github.com/{UPSTREAM_REPO}"
 
 COMMUNITY_URL = (
     "https://script.google.com/macros/s/"
@@ -92,6 +96,382 @@ YELLOW  = "#facc15"
 RED     = "#ef4444"
 WHITE   = ("#111111", "#f8fafc")   # primary text  (dark text in light mode)
 MUTED   = ("#555555", "#a1a1aa")   # secondary text
+
+
+# ─── Localisation ─────────────────────────────────────────────────────────────
+# Translations are keyed by the English source string, so every widget built with
+# a literal is covered without touching its call site: the CTk widget classes are
+# wrapped below to translate `text` on creation and to remember the English
+# original, which lets the language be switched live.
+#
+# Runtime output — backend log lines, error detail panels, the changelog and FAQ
+# answers — stays English; only the interface chrome is translated.
+
+TRANSLATIONS = {
+    "tr": {
+        # ── Header / main actions ──
+        "▶  START QUEUE": "▶  KUYRUĞU BAŞLAT",
+        "✕  CANCEL": "✕  İPTAL",
+        "☀ Light / 🌙 Dark": "☀ Açık / 🌙 Koyu",
+        "⊡  Compact": "⊡  Dar Görünüm",
+        "⟲  Reset Layout": "⟲  Düzeni Sıfırla",
+        "⚙  Settings": "⚙  Ayarlar",
+        # ── Folder row ──
+        "📁  FOLDER": "📁  KLASÖR",
+        "📦  ARCHIVE": "📦  ARŞİV",
+        "OUTPUT": "ÇIKTI",
+        "TEMP": "GEÇİCİ",
+        "Game folder, parent folder, archive (.zip/.rar/.7z), exFAT (.exfat) or ffpkg (.ffpkg)…":
+            "Oyun klasörü, üst klasör, arşiv (.zip/.rar/.7z), exFAT (.exfat) veya ffpkg (.ffpkg)…",
+        "Output folder...": "Çıktı klasörü...",
+        "Temp folder on fast drive...": "Hızlı diskte geçici klasör...",
+        # ── Queue panel ──
+        "QUEUE": "KUYRUK",
+        "SCAN / ADD": "TARA / EKLE",
+        "✕ REMOVE": "✕ KALDIR",
+        "🗑 CLEAR": "🗑 TEMİZLE",
+        "↓ Drag & drop supported": "↓ Sürükle-bırak destekleniyor",
+        "ARCHIVE PASSWORD (OPTIONAL)": "ARŞİV PAROLASI (İSTEĞE BAĞLI)",
+        "Only needed if your ZIP / RAR / 7z is password-protected.":
+            "Yalnızca ZIP / RAR / 7z dosyanız parola korumalıysa gerekir.",
+        "Archive password (if required)": "Arşiv parolası (gerekiyorsa)",
+        # ── Options ──
+        "OPTIONS": "SEÇENEKLER",
+        "Skip games that are already compressed": "Zaten sıkıştırılmış oyunları atla",
+        "Open output folder when done": "Bitince çıktı klasörünü aç",
+        "Show summary popup": "Özet penceresini göster",
+        "Play sound on completion": "Tamamlanınca ses çal",
+        "Play sound on errors": "Hatalarda ses çal",
+        "Keep intermediate PFS": "Ara PFS dosyasını sakla",
+        "Verify Output (Slower, Uses More RAM)": "Çıktıyı Doğrula (Yavaş, Daha Çok RAM)",
+        "Auto-clear temp after success": "Başarıdan sonra geçici klasörü temizle",
+        "Verbose mkpfs output (debug)": "Ayrıntılı mkpfs çıktısı (hata ayıklama)",
+        "  FOLDER button detects single games and multi-dump parent folders.":
+            "  KLASÖR düğmesi tek oyunları ve çok oyunlu üst klasörleri algılar.",
+        # ── Progress ──
+        "OVERALL PROGRESS": "GENEL İLERLEME",
+        "CURRENT STAGE": "GEÇERLİ AŞAMA",
+        "Ready": "Hazır",
+        "Add a game and start queue.": "Bir oyun ekleyip kuyruğu başlatın.",
+        "Starting": "Başlatılıyor",
+        "Launching backend.": "Arka uç başlatılıyor.",
+        "Cancelling": "İptal ediliyor",
+        "Cancel requested.": "İptal istendi.",
+        "Failed": "Başarısız",
+        "Extracting": "Çıkartılıyor",
+        "Complete": "Tamamlandı",
+        "Scanning Files": "Dosyalar Taranıyor",
+        "Reading Game": "Oyun Okunuyor",
+        "Building Image": "İmaj Oluşturuluyor",
+        "Verifying Output": "Çıktı Doğrulanıyor",
+        "Cleaning Up": "Temizleniyor",
+        "Scan": "Tara",
+        "Read": "Oku",
+        "Build": "Kur",
+        "Verify": "Doğrula",
+        "Cleanup": "Temizle",
+        "Done": "Bitti",
+        "ShadowMount — How to use your .ffpfsc file":
+            "ShadowMount — .ffpfsc dosyanızı nasıl kullanırsınız",
+        # ── Compression tuning ──
+        "COMPRESSION TUNING": "SIKIŞTIRMA AYARLARI",
+        "Level (0-9):": "Seviye (0-9):",
+        "CPU cores (0=auto):": "CPU çekirdeği (0=oto):",
+        "Block size:": "Blok boyutu:",
+        "Presets:": "Hazır ayarlar:",
+        "auto": "oto",
+        # ── Right column ──
+        "GAME DETAILS": "OYUN BİLGİLERİ",
+        # Field labels used through tfield(); the value beside them is untouched.
+        "Name": "Ad",
+        "Title ID": "Oyun Kodu",
+        "Original Size": "Özgün Boyut",
+        "Files": "Dosya",
+        "Source": "Kaynak",
+        "Name: No game selected": "Ad: Oyun seçilmedi",
+        "Title ID: —": "Oyun Kodu: —",
+        "Source: —": "Kaynak: —",
+        "Original Size: —": "Özgün Boyut: —",
+        "Files: —": "Dosya: —",
+        "Waiting for a game.": "Bir oyun bekleniyor.",
+        "● Ready": "● Hazır",
+        "click Scan / Add": "Tara / Ekle'ye basın",
+        # ShadowMount instructions
+        "1.   Copy the .ffpfsc file to your PS5 internal storage or an external USB drive.\n"
+        "2.   Open ShadowMount on your PS5 and let it scan. "
+        "If the game is not detected or the shortcut is not made, re-run ShadowMount.\n"
+        "3.   Select the game from the XMB and launch it — it will appear and run like a standard title.":
+            "1.   .ffpfsc dosyasını PS5 dahili depolamasına veya harici bir USB diske kopyalayın.\n"
+            "2.   PS5'te ShadowMount'u açıp taramasını bekleyin. "
+            "Oyun algılanmazsa veya kısayol oluşmazsa ShadowMount'u yeniden çalıştırın.\n"
+            "3.   Oyunu XMB'den seçip başlatın — normal bir oyun gibi görünüp çalışacaktır.",
+        # Idle stage chips — the active ones are rebuilt through t() at runtime.
+        "○ Scan": "○ Tara",
+        "○ Read": "○ Oku",
+        "○ Build": "○ Kur",
+        "○ Verify": "○ Doğrula",
+        "○ Cleanup": "○ Temizle",
+        "○ Done": "○ Bitti",
+        # Queue summary line
+        "  Queue is empty": "  Kuyruk boş",
+        "Total: 0 game(s)": "Toplam: 0 oyun",
+        "COMMAND PREVIEW": "KOMUT ÖNİZLEME",
+        "Select source, output, and temp folder to preview command.":
+            "Komutu görmek için kaynak, çıktı ve geçici klasörü seçin.",
+        "Select output and temp folder to preview command.":
+            "Komutu görmek için çıktı ve geçici klasörü seçin.",
+        # ── Bottom panels ──
+        # Bottom tab names
+        "Logs": "Günlük",
+        "Status & Stats": "Durum ve İstatistik",
+        "Recent Compressions": "Son Sıkıştırmalar",
+        "Statistics": "İstatistikler",
+        "Compatibility": "Uyumluluk",
+        "Help / FAQ": "Yardım / SSS",
+        "STATUS": "DURUM",
+        "STATS": "İSTATİSTİK",
+        "TOOLS": "ARAÇLAR",
+        "LOGS": "GÜNLÜK",
+        "CLEAR LOGS": "GÜNLÜĞÜ TEMİZLE",
+        "OPEN OUTPUT FOLDER": "ÇIKTI KLASÖRÜNÜ AÇ",
+        "EXPORT RAW LOG": "HAM GÜNLÜĞÜ DIŞA AKTAR",
+        "🗑  Clear Temp Files": "🗑  Geçici Dosyaları Sil",
+        "📦  Export Diagnostic": "📦  Tanılama Dışa Aktar",
+        "📋  Copy Last Result": "📋  Son Sonucu Kopyala",
+        "RECENT COMPRESSIONS": "SON SIKIŞTIRMALAR",
+        "REFRESH": "YENİLE",
+        "COMPRESSION STATISTICS": "SIKIŞTIRMA İSTATİSTİKLERİ",
+        "REFRESH STATS": "İSTATİSTİKLERİ YENİLE",
+        "SUBMIT COMPATIBILITY REPORT": "UYUMLULUK RAPORU GÖNDER",
+        "COMMUNITY LIST": "TOPLULUK LİSTESİ",
+        "Storage:": "Depolama:",
+        "Status:": "Durum:",
+        "Performance Notes:": "Performans Notları:",
+        "Share anonymously to community database":
+            "Topluluk veritabanına anonim olarak gönder",
+        "✚  Submit Report": "✚  Rapor Gönder",
+        "⟳  Auto-fill from last game": "⟳  Son oyundan doldur",
+        "☁ Fetch Online": "☁ Çevrimiçi Al",
+        "⟳ Local": "⟳ Yerel",
+        "🌐 Sheet": "🌐 Tablo",
+        "Video Guide by KINGDKAK:": "KINGDKAK'tan Video Rehber:",
+        "▶  Watch on YouTube": "▶  YouTube'da İzle",
+        # ── Settings window ──
+        "Settings": "Ayarlar",
+        "Changes apply immediately.": "Değişiklikler hemen uygulanır.",
+        "FOLDERS": "KLASÖRLER",
+        "COMPRESSION": "SIKIŞTIRMA",
+        "USER INTERFACE": "ARAYÜZ",
+        "ABOUT": "HAKKINDA",
+        "Browse": "Gözat",
+        "Theme:": "Tema:",
+        "Toggle Dark / Light": "Koyu / Açık Değiştir",
+        "Language:": "Dil:",
+        "Compression level (0-9):": "Sıkıştırma seviyesi (0-9):",
+        "auto=65536  auto-fit=minimise waste  16384/32768=small-file games":
+            "auto=65536  auto-fit=israfı azaltır  16384/32768=küçük dosyalı oyunlar",
+        "Default Archive Password (optional):": "Varsayılan Arşiv Parolası (isteğe bağlı):",
+        "Pre-fill the archive password field for password-protected ZIPs/RARs/7zs.":
+            "Parola korumalı ZIP/RAR/7z için parola alanını önceden doldurur.",
+        "📋  View Changelog": "📋  Değişiklik Günlüğü",
+        "🔄  Check for Updates": "🔄  Güncelleme Denetle",
+        "☕  Support on Ko-fi": "☕  Ko-fi'de Destekle",
+        "Take a Feature Tour": "Özellik Turuna Başla",
+        "Open Config Folder": "Ayar Klasörünü Aç",
+        "Auto-clear temp folder after success": "Başarıdan sonra geçici klasörü temizle",
+        "Per-game output subfolder (output/GameName/)":
+            "Oyun başına çıktı alt klasörü (çıktı/OyunAdı/)",
+        "Keep intermediate PFS image": "Ara PFS imajını sakla",
+        "Verify output (slower, uses more RAM)": "Çıktıyı doğrula (yavaş, daha çok RAM)",
+        # ── Drive diagnostics dialog ──
+        "Drive Space Diagnostics": "Disk Alanı Kontrolü",
+        "Pre-flight check before compression starts.":
+            "Sıkıştırma başlamadan önceki denetim.",
+        "Game Size": "Oyun Boyutu",
+        "Temp Drive Free": "Geçici Disk Boş",
+        "Output Drive Free": "Çıktı Diski Boş",
+        "Output Drive Needs": "Çıktı Diski Gereken",
+        "Est. Peak Required": "Tahmini Tepe İhtiyaç",
+        "Est. Final Output": "Tahmini Son Çıktı",
+        "Temp Filesystem": "Geçici Dosya Sistemi",
+        "Output Filesystem": "Çıktı Dosya Sistemi",
+        "Temp Drive Type:": "Geçici Disk Türü:",
+        "Detecting…": "Algılanıyor…",
+        "SSD / NVMe": "SSD / NVMe",
+        "Unknown": "Bilinmiyor",
+        "▶  START NOW": "▶  ŞİMDİ BAŞLAT",
+        "✕  CANNOT START": "✕  BAŞLATILAMAZ",
+        "Cancel": "İptal",
+        "✓  Enough space to proceed.": "✓  Devam etmek için yeterli alan var.",
+        "✕  Compression cannot start — see below.":
+            "✕  Sıkıştırma başlatılamaz — aşağıya bakın.",
+        "⚠  Not enough space — compression may fail.":
+            "⚠  Alan yetersiz — sıkıştırma başarısız olabilir.",
+        "⚠  Temp folder is on a mechanical HDD — will be significantly slower.":
+            "⚠  Geçici klasör mekanik diskte — belirgin şekilde yavaş olacak.",
+        # ── First-run wizard ──
+        "PS5 FFPFSC PRO — First Run Setup": "PS5 FFPFSC PRO — İlk Kurulum",
+        "← Back": "← Geri",
+        "Next →": "İleri →",
+        "Step 1 — Select Temp Folder": "Adım 1 — Geçici Klasörü Seçin",
+        "Choose a temp folder on a fast SSD or NVMe drive. Avoid mechanical HDDs for large games.":
+            "Hızlı bir SSD veya NVMe diskte geçici klasör seçin. Büyük oyunlarda mekanik diskten kaçının.",
+        "Temp Folder:": "Geçici Klasör:",
+        "Step 2 — Select Output Folder": "Adım 2 — Çıktı Klasörünü Seçin",
+        "Output Folder:": "Çıktı Klasörü:",
+        "Step 3 — Storage Check": "Adım 3 — Depolama Denetimi",
+        "Checking your selected drives for speed and available space.":
+            "Seçtiğiniz diskler hız ve boş alan için denetleniyor.",
+        "Step 4 — Ready!": "Adım 4 — Hazır!",
+        "Setup is complete. These settings will be saved and pre-filled next time you launch.":
+            "Kurulum tamamlandı. Bu ayarlar kaydedilecek ve sonraki açılışta hazır gelecek.",
+        # ── Result dialogs ──
+        "Compression Complete": "Sıkıştırma Tamamlandı",
+        "✅  Compression Complete": "✅  Sıkıştırma Tamamlandı",
+        "📋  Copy Result": "📋  Sonucu Kopyala",
+        "✓ Copied!": "✓ Kopyalandı!",
+        "Compression Failed": "Sıkıştırma Başarısız",
+        "Possible Causes:": "Olası Nedenler:",
+        "Last 50 Log Lines:": "Son 50 Günlük Satırı:",
+        "Copy Error": "Hatayı Kopyala",
+        "Export Raw Log": "Ham Günlüğü Dışa Aktar",
+        "Open Log Folder": "Günlük Klasörünü Aç",
+        "Close": "Kapat",
+        # ── FAQ questions ──
+        "Q: The app crashes or freezes during compression — what do I do?":
+            "S: Uygulama sıkıştırma sırasında çöküyor veya donuyor — ne yapmalıyım?",
+        "Q: 'Multiple game folders found' error — what does that mean?":
+            "S: 'Multiple game folders found' hatası ne demek?",
+        "Q: My .exfat or .ffpkg file isn't being detected.":
+            "S: .exfat veya .ffpkg dosyam algılanmıyor.",
+        "Q: The output .ffpfsc file is over 4 GB and won't copy to my drive.":
+            "S: Çıktı .ffpfsc dosyası 4 GB'ı aşıyor ve diskime kopyalanmıyor.",
+        "Q: Compression is very slow — how do I speed it up?":
+            "S: Sıkıştırma çok yavaş — nasıl hızlandırırım?",
+        "Q: 'ModuleNotFoundError: No module named cryptography'":
+            "S: 'ModuleNotFoundError: No module named cryptography'",
+        "Q: What are the Compression Tuning settings?":
+            "S: Sıkıştırma Ayarları ne işe yarar?",
+        "Q: How do I get the compressed file onto my PS5?":
+            "S: Sıkıştırılmış dosyayı PS5'ime nasıl aktarırım?",
+    },
+}
+
+_LANGUAGE_NAMES = {"en": "EN", "tr": "TR"}
+_lang = "en"
+_i18n_widgets = []          # [(widget, english_text, attribute)]
+_i18n_vars = []             # [tk.StringVar]
+_i18n_applying = False      # guards the re-translation pass against re-registering
+
+
+def t(text):
+    """Translate a UI string into the active language (identity for English)."""
+    if _lang == "en" or not isinstance(text, str) or not text:
+        return text
+    return TRANSLATIONS.get(_lang, {}).get(text, text)
+
+
+def tfield(label, value):
+    """Format a 'Label: value' line with only the label translated."""
+    return f"{t(label)}: {value}"
+
+
+def _to_english(text):
+    """Best-effort reverse lookup, for values already shown in another language."""
+    if not isinstance(text, str) or not text:
+        return text
+    for table in TRANSLATIONS.values():
+        for english, translated in table.items():
+            if translated == text:
+                return english
+    return text
+
+
+def current_language() -> str:
+    return _lang
+
+
+def register_i18n_var(var, initial=None):
+    """Track a StringVar so its contents follow a language switch."""
+    if initial is not None:
+        var.set(t(initial))
+    _i18n_vars.append(var)
+    return var
+
+
+def set_language(code: str) -> None:
+    """Switch the interface language and re-translate everything on screen."""
+    global _lang, _i18n_applying
+    if code not in _LANGUAGE_NAMES:
+        return
+    _lang = code
+    _i18n_applying = True
+    try:
+        alive = []
+        for widget, english, attribute in _i18n_widgets:
+            try:
+                if not widget.winfo_exists():
+                    continue
+                widget.configure(**{attribute: t(english)})
+                alive.append((widget, english, attribute))
+            except Exception:
+                pass
+        _i18n_widgets[:] = alive
+
+        live_vars = []
+        for var in _i18n_vars:
+            try:
+                var.set(t(_to_english(var.get())))
+                live_vars.append(var)
+            except Exception:
+                pass
+        _i18n_vars[:] = live_vars
+    finally:
+        _i18n_applying = False
+
+
+def _localised(base_class):
+    """Wrap a CTk widget class so its text is translated and stays switchable."""
+    _TEXT_ATTRS = ("text", "placeholder_text")
+
+    class _Localised(base_class):
+        def __init__(self, *args, **kwargs):
+            originals = {}
+            for attr in _TEXT_ATTRS:
+                value = kwargs.get(attr)
+                if isinstance(value, str) and value:
+                    originals[attr] = value
+                    kwargs[attr] = t(value)
+            super().__init__(*args, **kwargs)
+            for attr, value in originals.items():
+                _i18n_widgets.append((self, value, attr))
+
+        def configure(self, **kwargs):
+            if not _i18n_applying:
+                for attr in _TEXT_ATTRS:
+                    value = kwargs.get(attr)
+                    if isinstance(value, str) and value:
+                        kwargs[attr] = t(value)
+                        # Later text replaces whatever this widget registered before.
+                        for i, (w, _eng, a) in enumerate(_i18n_widgets):
+                            if w is self and a == attr:
+                                _i18n_widgets[i] = (self, value, attr)
+                                break
+                        else:
+                            _i18n_widgets.append((self, value, attr))
+            return super().configure(**kwargs)
+
+    _Localised.__name__ = base_class.__name__
+    _Localised.__qualname__ = base_class.__qualname__
+    return _Localised
+
+
+# Patched on the top-level namespace only. CustomTkinter's own widgets import
+# each other through relative imports, so its internals are left untouched.
+ctk.CTkLabel    = _localised(ctk.CTkLabel)
+ctk.CTkButton   = _localised(ctk.CTkButton)
+ctk.CTkCheckBox = _localised(ctk.CTkCheckBox)
+ctk.CTkEntry    = _localised(ctk.CTkEntry)
 
 
 def ensure_app_dir() -> None:
@@ -801,21 +1181,22 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
     def __init__(self, parent, item, temp_dir: Path, out_dir: Path):
         super().__init__(parent)
         self.title("Drive Space Diagnostics")
-        self.geometry("520x450")
+        self.geometry("520x560")
         self.resizable(False, False)
         self.configure(fg_color=BLACK)
         self.proceed = False
         self._auto_timer = None
         self._countdown  = 0
         self._proceed_btn = None   # set in _build
+        self._blocked = False      # set in _build — True when the run cannot succeed
         self._build(item, temp_dir, out_dir)
         # Keep dialog above the main window on all platforms
         self.transient(parent)
         self.lift()
         self.focus_force()
         self.after(50, self.grab_set)
-        # Auto-proceed after 4 s when space is sufficient
-        if get_free_space(temp_dir) >= estimate_peak_space_needed(
+        # Auto-proceed after 4 s when space is sufficient — never when blocked
+        if not self._blocked and get_free_space(temp_dir) >= estimate_peak_space_needed(
                 item.size, same_drive(temp_dir, out_dir)):
             self._countdown = 4
             self.after(1000, self._tick_countdown)
@@ -839,8 +1220,12 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
         temp_fs     = get_filesystem_type(temp_dir)   # fast ctypes call
         out_fs      = get_filesystem_type(out_dir)
 
-        def _fs_status(fs):
-            if fs in ("exFAT", "FAT32", "FAT"): return "warn"
+        def _fs_status(fs, *, is_temp=False):
+            # FAT32 is always a concern (4 GB per-file cap). exFAT only matters
+            # for the temp folder, where the missing hardlink support forces the
+            # slower copy path — as an output target it is perfectly fine.
+            if fs in ("FAT32", "FAT", "FAT16"): return "warn"
+            if fs == "exFAT": return "warn" if is_temp else "ok"
             if fs == "NTFS": return "ok"
             return None
 
@@ -849,16 +1234,35 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
             if status == "warn": return YELLOW
             return WHITE
 
-        space_ok = temp_free >= peak_needed
+        # mkpfs refuses to start unless the output drive has free space equal to
+        # the *uncompressed* source size, even though the finished file is
+        # smaller. Mirror that rule here so the run is not wasted.
+        out_required = item.size
+        # get_free_space() returns 0 when the probe fails — treat that as unknown
+        # rather than as a blocker.
+        out_space_ok = out_free <= 0 or out_free >= out_required
+        temp_space_ok = temp_free >= peak_needed
+        space_ok = temp_space_ok and out_space_ok
+
+        # Only FAT32/FAT cap a single file at 4 GB. exFAT was designed to lift
+        # that limit and handles multi-hundred-GB files, so it is a valid output
+        # target and must not be flagged.
+        out_fat32 = out_fs in ("FAT32", "FAT", "FAT16")
+        fat_blocks_output = out_fat32 and item.size > 4 * 1024 ** 3 - 1
+
+        self._blocked = fat_blocks_output or not out_space_ok
 
         static_rows = [
             ("Game Size",          format_size(item.size),                  None),
             ("Temp Drive Free",    format_size(temp_free),                  None),
-            ("Output Drive Free",  format_size(out_free),                   None),
+            ("Output Drive Free",  format_size(out_free),
+             "ok" if out_space_ok else "warn"),
+            ("Output Drive Needs", format_size(out_required),
+             "ok" if out_space_ok else "warn"),
             ("Est. Peak Required", format_size(peak_needed),
-             "ok" if space_ok else "warn"),
+             "ok" if temp_space_ok else "warn"),
             ("Est. Final Output",  f"~{format_size(final_est)} (typical)",  None),
-            ("Temp Filesystem",    temp_fs,    _fs_status(temp_fs)),
+            ("Temp Filesystem",    temp_fs,    _fs_status(temp_fs, is_temp=True)),
             ("Output Filesystem",  out_fs,     _fs_status(out_fs)),
         ]
 
@@ -882,11 +1286,34 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
         self._dt_label.grid(row=0, column=1, sticky="e")
 
         # ── Space result banner ────────────────────────────────────────────────
-        result_text  = "✓  Enough space to proceed." if space_ok else "⚠  Not enough space — compression may fail."
-        result_color = ("#1a7a40", "#4ade80") if space_ok else YELLOW
+        if self._blocked:
+            result_text  = "✕  Compression cannot start — see below."
+            result_color = RED
+        elif space_ok:
+            result_text  = "✓  Enough space to proceed."
+            result_color = ("#1a7a40", "#4ade80")
+        else:
+            result_text  = "⚠  Not enough space — compression may fail."
+            result_color = YELLOW
         ctk.CTkLabel(panel, text=result_text, text_color=result_color,
                       font=ctk.CTkFont(size=13, weight="bold")
                      ).pack(anchor="w", padx=14, pady=(8, 2))
+
+        # ── Hard blockers (these make the run fail every time) ─────────────────
+        if not out_space_ok:
+            ctk.CTkLabel(panel,
+                          text=(f"✕  Output drive is short by {format_size(out_required - out_free)}. "
+                                f"mkpfs reserves the full uncompressed size ({format_size(out_required)}) "
+                                f"before it starts, even though the result will be smaller."),
+                          text_color=RED, justify="left", wraplength=460
+                         ).pack(anchor="w", padx=14, pady=(0, 2))
+        if fat_blocks_output:
+            ctk.CTkLabel(panel,
+                          text=(f"✕  Output drive is {out_fs} — 4 GB per-file limit. This "
+                                f"{format_size(item.size)} game cannot be written there. "
+                                f"Choose an NTFS or exFAT output folder."),
+                          text_color=RED, justify="left", wraplength=460
+                         ).pack(anchor="w", padx=14, pady=(0, 2))
 
         # Filesystem warnings (fast — already have temp_fs / out_fs)
         if temp_fs in ("exFAT", "FAT32", "FAT"):
@@ -894,9 +1321,9 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
                           text=f"⚠  Temp drive is {temp_fs} — no hardlink support. Slower copy mode will be used.",
                           text_color=YELLOW, justify="left", wraplength=460
                          ).pack(anchor="w", padx=14, pady=(0, 2))
-        if out_fs in ("exFAT", "FAT32", "FAT"):
+        if out_fat32 and not fat_blocks_output:
             ctk.CTkLabel(panel,
-                          text=f"⚠  Output drive is {out_fs}. NTFS recommended.",
+                          text=f"⚠  Output drive is {out_fs} — files must stay under 4 GB.",
                           text_color=YELLOW, justify="left", wraplength=460
                          ).pack(anchor="w", padx=14, pady=(0, 2))
 
@@ -918,6 +1345,10 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
                        command=self._ok
                       )
         self._proceed_btn.pack(side="right", padx=(8, 0))
+        if self._blocked:
+            # Starting would fail for certain — do not offer a doomed run.
+            self._proceed_btn.configure(state="disabled", text="✕  CANNOT START",
+                                         fg_color=CARD2, text_color=MUTED)
         ctk.CTkButton(btns, text="Cancel",
                        fg_color=CARD2, text_color=WHITE,
                        hover_color=("#b0b0b0", "#2a2a2a"),
@@ -965,6 +1396,8 @@ class SpaceDiagnosticsDialog(ctk.CTkToplevel):
             self._ok()
 
     def _ok(self):
+        if self._blocked:
+            return
         if self._auto_timer:
             try:
                 self.after_cancel(self._auto_timer)
@@ -1086,6 +1519,7 @@ class SettingsWindow(ctk.CTkToplevel):
             ("Verify output (slower, uses more RAM)", self.app.verify_output_var,    None),
             ("Auto-clear temp folder after success",  self.app.auto_clear_temp_var,  "auto_clear_temp"),
             ("Per-game output subfolder (output/GameName/)", self.app.per_game_folder_var, "per_game_folder"),
+            ("Skip games that are already compressed", self.app.skip_existing_var,   "skip_existing"),
             ("Verbose mkpfs output (debug)",          self.app.verbose_var,           None),
         ]:
             cb = ctk.CTkCheckBox(comp, text=text, variable=var, fg_color=GREEN,
@@ -1177,7 +1611,7 @@ class SettingsWindow(ctk.CTkToplevel):
         about = ctk.CTkFrame(scroll, fg_color=PANEL, corner_radius=8)
         about.pack(fill="x", pady=(4, 12))
         for line in [
-            f"Version:  {APP_VERSION}",
+            f"Version:  {APP_VERSION}  (fork of {UPSTREAM_REPO})",
             f"Backend:  {BACKEND_NAME}",
             f"MkPFS:    {MKPFS_NAME} v{MKPFS_VERSION}",
             f"Config:   {SETTINGS_FILE}",
@@ -1363,6 +1797,7 @@ class ArchiveExtractor:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
+                    errors="replace",
                     bufsize=1,
                     universal_newlines=True,
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
@@ -1620,6 +2055,9 @@ class CLIWorker(threading.Thread):
         try:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
+            # The backend writes into a pipe, so Python would pick the ANSI locale
+            # codepage (cp1254 on Turkish Windows) and crash on non-ASCII icons.
+            env["PYTHONIOENCODING"] = "utf-8:replace"
             self.temp_dir.mkdir(parents=True, exist_ok=True)
             env["TEMP"] = str(self.temp_dir)
             env["TMP"] = str(self.temp_dir)
@@ -1632,6 +2070,8 @@ class CLIWorker(threading.Thread):
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 bufsize=1,
                 universal_newlines=True,
                 env=env,
@@ -1894,35 +2334,42 @@ class CLIWorker(threading.Thread):
             return
 
         # OSError [Errno 22] Invalid argument on write.
-        # Either the output drive is exFAT/FAT32 (4 GB file limit) or a corrupt
-        # chunk was written after an OOM crash.
+        # Either the output drive is FAT32 (4 GB file limit) or a corrupt chunk
+        # was written after an OOM crash. exFAT has no such limit.
         if ("oserror" in lower or "ioerror" in lower) and (
             "errno 22" in lower or "invalid argument" in lower
         ):
             self.app.log("ERROR",
                 "❌  Write failed — OS error 22 (Invalid argument).\n"
                 "\n"
-                "  Most likely cause:  output drive is exFAT or FAT32\n"
-                "    exFAT / FAT32 has a 4 GB per-file limit.\n"
-                "    A large .ffpfsc will exceed this and fail mid-write.\n"
-                "\n"
                 "  ╔═ Settings to check / change: ═══════════════════════════════╗\n"
-                "  ║  OUTPUT folder  →  move to an NTFS drive (e.g. C:\\  D:\\)   ║\n"
+                "  ║  OUTPUT folder  →  if it is FAT32, move it: FAT32 caps a     ║\n"
+                "  ║                    single file at 4 GB (NTFS and exFAT do    ║\n"
+                "  ║                    not — both handle far larger files)       ║\n"
                 "  ║  CPU cores      →  set to 1–2 if RAM could also be the cause ║\n"
+                "  ║  Network drive  →  write to a local disk instead             ║\n"
                 "  ╚══════════════════════════════════════════════════════════════╝"
             )
             return
 
-        # No-space-left / disk full
+        # No-space-left / disk full.
+        # "does not have enough space" is mkpfs's own pre-flight wording — it
+        # aborts before writing anything when the destination has less free
+        # space than the UNCOMPRESSED source size.
         if ("errno 28" in lower or "no space left" in lower
-                or "there is not enough space" in lower):
+                or "there is not enough space" in lower
+                or "does not have enough space" in lower
+                or "not enough free space" in lower):
             self.app.log("ERROR",
-                "❌  Disk full — the output or temp drive ran out of space.\n"
+                "❌  Not enough free space on the output or temp drive.\n"
+                "\n"
+                "  mkpfs reserves free space equal to the game's UNCOMPRESSED size\n"
+                "  before it starts, even though the finished .ffpfsc is smaller.\n"
                 "\n"
                 "  ╔═ Settings to check: ════════════════════════════════════════╗\n"
-                "  ║  OUTPUT folder  →  point to a drive with more free space    ║\n"
-                "  ║  TEMP folder    →  point to a drive with more free space    ║\n"
-                "  ║                    (needs ~1.5× the game size during build) ║\n"
+                "  ║  OUTPUT folder  →  needs ≥ the full game size free          ║\n"
+                "  ║  TEMP folder    →  needs ~1.5× the game size during build   ║\n"
+                "  ║                    (NTFS or exFAT — not FAT32)              ║\n"
                 "  ╚══════════════════════════════════════════════════════════════╝"
             )
             return
@@ -1935,7 +2382,7 @@ class CLIWorker(threading.Thread):
                     "  Common causes & settings to try:\n"
                     "\n"
                     "  ╔═ Check these settings: ══════════════════════════════════════╗\n"
-                    "  ║  OUTPUT folder  →  must be NTFS (not exFAT / FAT32)          ║\n"
+                    "  ║  OUTPUT folder  →  needs ≥ the full game size free (not FAT32)║\n"
                     "  ║  TEMP folder    →  needs ~1.5× game size of free space       ║\n"
                     "  ║  CPU cores      →  lower to 2 or 1 if you have limited RAM   ║\n"
                     "  ║  Level          →  try 5 if high level causes OOM            ║\n"
@@ -2147,6 +2594,7 @@ class App:
         self._batch_total   = 0
         self._batch_done    = 0
         self._batch_failed  = 0
+        self._batch_skipped = 0
         self._batch_running = False
         self._details_item  = None   # GameItem currently shown in the details panel
         self._settings_win  = None
@@ -2185,10 +2633,15 @@ class App:
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("green")
         self.root.title(f"{APP_NAME} {APP_VERSION}")
-        self.root.geometry("1400x960")
-        self.root.minsize(1100, 760)
+        # Sizes the window to the usable desktop and sets minsize to match.
+        # Every column scrolls on its own now, so the window may be shrunk well
+        # below the old 1100x760 floor without hiding any control.
+        self._fit_window_to_screen()
 
         settings = load_settings()
+
+        # Applied before _build() so every widget is created already translated.
+        set_language(settings.get("language", "en"))
 
         # Validate saved folder paths — clear any that no longer exist so the
         # app doesn't crash or silently write to a stale/missing drive.
@@ -2211,9 +2664,117 @@ class App:
         self._saved_ampr_folder     = settings.get("ampr_folder", "")
         self._saved_per_game_folder = settings.get("per_game_folder", False)
         self._saved_auto_clear_temp = settings.get("auto_clear_temp", False)
+        self._saved_skip_existing   = settings.get("skip_existing", True)
         self._saved_compression_level = settings.get("compression_level", 9)
         self._saved_cpu_count = settings.get("cpu_count", 0)
         self._saved_block_size = settings.get("block_size", "auto")
+
+    def _work_area(self) -> tuple[int, int]:
+        """Usable desktop size in physical pixels, excluding the taskbar."""
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        try:
+            import ctypes
+            from ctypes import wintypes
+            rect = wintypes.RECT()
+            # SPI_GETWORKAREA = 0x0030
+            if ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(rect), 0):
+                return rect.right - rect.left, rect.bottom - rect.top
+        except Exception:
+            pass
+        return screen_w, screen_h - 60
+
+    def _fit_window_to_screen(self):
+        """Open at the preferred size, or maximized when it would not fit.
+
+        The old hard-coded 1400x960 is taller than a 1536x864 laptop display,
+        and CustomTkinter multiplies requested geometry by the display scaling
+        factor on top of that — at 125% it asked Windows for 1750x1200. The
+        excess fell off the bottom and right edges of the screen, which is why
+        controls such as the CPU-core slider could not be reached at all.
+        """
+        want_w, want_h = 1400, 960
+        work_w, work_h = self._work_area()
+        scaling = self._display_scaling()
+        self._ui_scale = scaling   # reused by _reflow to convert px -> CTk units
+
+        # Geometry is given in CTk units, which CustomTkinter multiplies by the
+        # display scaling factor — so convert the usable desktop into those same
+        # units before clamping. Computed rather than handed to "zoomed", which
+        # is silently ignored when the window has not been mapped yet.
+        margin = 16
+        fit_w = max(600, int((work_w - margin) / scaling))
+        fit_h = max(400, int((work_h - margin) / scaling))
+        width  = min(want_w, fit_w)
+        height = min(want_h, fit_h)
+
+        x = max(0, int((work_w - width * scaling) / 2))
+        y = max(0, int((work_h - height * scaling) / 2))
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
+
+        # minsize is scaled the same way; keep it under the fitted size so the
+        # floor can never push the window back off a small screen.
+        self.root.minsize(min(900, width), min(560, height))
+
+        # The scaling factor read before the window is mapped can be wrong, so
+        # measure the real one once it exists and correct if it overflows.
+        self._requested_units = (width, height)
+        self.root.after(200, self._enforce_fit)
+
+    def _enforce_fit(self, attempt: int = 0):
+        """Shrink the window if it ended up larger than the usable desktop."""
+        try:
+            self.root.update_idletasks()
+            actual_w = self.root.winfo_width()
+            actual_h = self.root.winfo_height()
+            if actual_w < 50 or actual_h < 50:
+                if attempt < 10:
+                    self.root.after(150, lambda: self._enforce_fit(attempt + 1))
+                return
+
+            work_w, work_h = self._work_area()
+            if actual_w <= work_w and actual_h <= work_h:
+                return  # already fits
+
+            # Derive the factor Tk actually applied, then re-fit with it.
+            req_w, req_h = self._requested_units
+            scale_w = actual_w / req_w if req_w else 1.0
+            scale_h = actual_h / req_h if req_h else 1.0
+            scale = max(0.5, scale_w, scale_h)
+
+            width = max(600, int((work_w - 16) / scale))
+            height = max(400, int((work_h - 16) / scale))
+            self.root.minsize(min(900, width), min(560, height))
+            self._requested_units = (width, height)
+            self.root.geometry(f"{width}x{height}+0+0")
+        except Exception:
+            pass
+
+    def _display_scaling(self) -> float:
+        """Display scaling factor (1.25 at 125%), matching what CustomTkinter applies."""
+        try:
+            import ctypes
+            # Same source CustomTkinter reads, so the two agree.
+            hmon = ctypes.windll.user32.MonitorFromWindow(0, 1)  # DEFAULTTOPRIMARY
+            factor = ctypes.c_int()
+            if ctypes.windll.shcore.GetScaleFactorForMonitor(hmon, ctypes.byref(factor)) == 0:
+                if factor.value > 0:
+                    return factor.value / 100.0
+        except Exception:
+            pass
+        try:
+            import ctypes
+            dc = ctypes.windll.user32.GetDC(0)
+            dpi = ctypes.windll.gdi32.GetDeviceCaps(dc, 88)  # LOGPIXELSX
+            ctypes.windll.user32.ReleaseDC(0, dc)
+            if dpi > 0:
+                return dpi / 96.0
+        except Exception:
+            pass
+        try:
+            return ctk.ScalingTracker.get_window_scaling(self.root) or 1.0
+        except Exception:
+            return 1.0
 
     def _show_first_run_wizard(self):
         wiz = FirstRunWizard(self.root)
@@ -2222,6 +2783,47 @@ class App:
             self.temp_var.set(wiz.result["temp_folder"])
         if wiz.result.get("output_folder"):
             self.output_var.set(wiz.result["output_folder"])
+
+    def _reflow(self, pane, label, padding=58, minimum=160):
+        """Re-wrap `label` whenever its column `pane` is resized.
+
+        The scrollable columns only scroll vertically, so a label with a fixed
+        wraplength gets cut off sideways as soon as the user drags its sash
+        narrower. Re-wrapping keeps every word reachable at any column width.
+
+        `pane` must be the plain outer pane, never the CTkScrollableFrame: the
+        frame's canvas changes width whenever its scrollbar appears, so binding
+        there makes re-wrapping feed back into itself and spin the event loop at
+        100% CPU. The debounce and the hysteresis below guard the same hazard.
+        """
+        state = {"applied": None, "job": None}
+
+        def _apply(width):
+            state["job"] = None
+            # `width` comes from a plain tk pane and is in physical pixels, while
+            # CTkLabel measures wraplength in CTk units and scales it by the
+            # display factor. Convert, or the text renders wider than its column
+            # and gets clipped at the edge.
+            scale = getattr(self, "_ui_scale", 1.0) or 1.0
+            target = max(minimum, int((width - padding) / scale))
+            if state["applied"] is not None and abs(state["applied"] - target) < 24:
+                return
+            state["applied"] = target
+            try:
+                label.configure(wraplength=target)
+            except Exception:
+                pass
+
+        def _on_resize(event):
+            width = event.width
+            if state["job"] is not None:
+                try:
+                    self.root.after_cancel(state["job"])
+                except Exception:
+                    pass
+            state["job"] = self.root.after(150, lambda: _apply(width))
+
+        pane.bind("<Configure>", _on_resize, add="+")
 
     def panel(self, parent, **grid):
         frame = ctk.CTkFrame(parent, fg_color=PANEL, border_width=1, border_color=BORDER, corner_radius=10)
@@ -2259,7 +2861,7 @@ class App:
 
         ctk.CTkLabel(header, text="PS5 FFPFSC PRO",
                       font=ctk.CTkFont(size=30, weight="bold"), text_color=WHITE).grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(header, text=f"v{APP_VERSION}  •  Bizkut Backend  •  {MKPFS_NAME} v{MKPFS_VERSION}  •  by KINGDKAK",
+        ctk.CTkLabel(header, text=f"v{APP_VERSION}  •  Bizkut Backend  •  {MKPFS_NAME} v{MKPFS_VERSION}  •  by KINGDKAK  •  fork by ufukasia",
                       text_color=MUTED).grid(row=1, column=0, sticky="w", padx=2)
 
         self.header_status_var = tk.StringVar(value=f"v{APP_VERSION}  |  Backend: Ready")
@@ -2273,11 +2875,16 @@ class App:
         self.cancel_btn.grid(row=0, column=4, padx=(0, 6), pady=2, sticky="e")
         self.cancel_btn.configure(state="disabled")
 
+        self._lang_btn = self._button(header, self._lang_button_text(), self._toggle_language, width=96)
+        self._lang_btn.grid(row=0, column=5, padx=(0, 4), pady=2, sticky="e")
+
         self._button(header, "☀ Light / 🌙 Dark", self._toggle_theme, width=150).grid(row=1, column=2, padx=12, sticky="e")
         self._compact_btn = self._button(header, "⊡  Compact", self._toggle_compact, width=90)
         self._compact_btn.grid(row=1, column=3, padx=(0, 4), sticky="e")
+        self._button(header, "⟲  Reset Layout", self._reset_layout, width=120).grid(
+            row=1, column=4, padx=(0, 4), sticky="e")
         self._settings_btn = self._button(header, "⚙  Settings", self.open_settings, width=110)
-        self._settings_btn.grid(row=1, column=4, padx=(0, 4), sticky="e")
+        self._settings_btn.grid(row=1, column=5, padx=(0, 4), sticky="e")
 
         # ── Variables ────────────────────────────────────────────────────────
         self.source_var = tk.StringVar()
@@ -2294,6 +2901,7 @@ class App:
         self.verify_output_var = tk.BooleanVar(value=False)
         self.auto_clear_temp_var  = tk.BooleanVar(value=self._saved_auto_clear_temp)
         self.per_game_folder_var  = tk.BooleanVar(value=self._saved_per_game_folder)
+        self.skip_existing_var    = tk.BooleanVar(value=self._saved_skip_existing)
         # MkPFS 0.0.8 tuning
         self.compression_level_var = tk.IntVar(value=self._saved_compression_level)
         self.cpu_count_var         = tk.IntVar(value=self._saved_cpu_count)
@@ -2340,16 +2948,28 @@ class App:
         self._bot_pane = tk.Frame(self._paned, bg=_pane_bg)
         self._paned.add(self._bot_pane, stretch="always", minsize=180)
 
-        # ── Content area (3 columns: left queue, center progress, right details)
-        content = ctk.CTkFrame(_top_pane, fg_color=BLACK)
-        content.pack(fill="both", expand=True, padx=12, pady=6)
-        content.grid_columnconfigure(0, weight=2)   # left: queue + options
-        content.grid_columnconfigure(1, weight=3)   # center: progress + stages
-        content.grid_columnconfigure(2, weight=2)   # right: game details + cmd
-        content.grid_rowconfigure(0, weight=1)
+        # ── Content area: 3 columns behind draggable sashes ───────────────────
+        # Each column scrolls independently, so no control can end up stranded
+        # below the window edge however small the window gets, and every column
+        # can be widened by dragging its sash.
+        self._content_paned = tk.PanedWindow(_top_pane, orient=tk.HORIZONTAL,
+                                              sashwidth=6, sashrelief=tk.GROOVE,
+                                              bg=_sash_bg, borderwidth=0, sashpad=2)
+        self._content_paned.pack(fill="both", expand=True, padx=12, pady=6)
+
+        _left_pane   = tk.Frame(self._content_paned, bg=_pane_bg)
+        _center_pane = tk.Frame(self._content_paned, bg=_pane_bg)
+        _right_pane  = tk.Frame(self._content_paned, bg=_pane_bg)
+        self._content_paned.add(_left_pane,   stretch="always", minsize=230, width=400)
+        self._content_paned.add(_center_pane, stretch="always", minsize=300, width=600)
+        self._content_paned.add(_right_pane,  stretch="always", minsize=260, width=360)
 
         # ── Left: Queue + Options ────────────────────────────────────────────
-        left = self.panel(content, row=0, column=0, sticky="nsew", padx=(0, 10))
+        left = ctk.CTkScrollableFrame(_left_pane, fg_color=PANEL, corner_radius=10,
+                                       border_width=1, border_color=BORDER,
+                                       scrollbar_button_color=CARD2,
+                                       scrollbar_button_hover_color=GREEN)
+        left.pack(fill="both", expand=True, padx=(0, 4))
         left.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(left, text="QUEUE", font=ctk.CTkFont(size=16, weight="bold"),
@@ -2358,8 +2978,9 @@ class App:
         # Queue listbox — tk.Listbox for native single-row selection
         lb_frame = ctk.CTkFrame(left, fg_color=CARD, corner_radius=6,
                                  border_width=1, border_color=BORDER)
-        lb_frame.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 0))
+        lb_frame.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 0))
         lb_frame.grid_columnconfigure(0, weight=1)
+        lb_frame.grid_rowconfigure(0, weight=1)
 
         _lb_bg   = "#111111"
         _lb_fg   = "#e8e8e8"
@@ -2372,18 +2993,33 @@ class App:
             font=("Consolas", 11),
             borderwidth=0, highlightthickness=0,
             activestyle="none", relief="flat",
-            height=7,
+            height=10,
             exportselection=False,
         )
         lb_scrollbar = tk.Scrollbar(lb_frame, orient="vertical",
                                      command=self.queue_listbox.yview)
-        self.queue_listbox.configure(yscrollcommand=lb_scrollbar.set)
-        self.queue_listbox.grid(row=0, column=0, sticky="nsew", padx=(4, 0), pady=4)
+        # Entries are long ("2. PPSA03974  Some Long Game Name.exfat  [178.80 GB]
+        # Queued") and used to be silently cut off at the panel edge — this lets
+        # the user scroll across to the status column.
+        lb_hscroll = tk.Scrollbar(lb_frame, orient="horizontal",
+                                   command=self.queue_listbox.xview)
+        self.queue_listbox.configure(yscrollcommand=lb_scrollbar.set,
+                                     xscrollcommand=lb_hscroll.set)
+        self.queue_listbox.grid(row=0, column=0, sticky="nsew", padx=(4, 0), pady=(4, 0))
         lb_scrollbar.grid(row=0, column=1, sticky="ns", pady=4, padx=(0, 2))
+        lb_hscroll.grid(row=1, column=0, sticky="ew", padx=(4, 0), pady=(0, 3))
         # Clicking a row refreshes game details; arrow keys reorder
         self.queue_listbox.bind("<<ListboxSelect>>", self._on_queue_select)
         self.queue_listbox.bind("<Up>",   self._lb_key_up)
         self.queue_listbox.bind("<Down>", self._lb_key_down)
+
+        # The listbox sits inside a scrollable column, which also grabs the
+        # wheel. Claim the event here so the wheel scrolls the queue the user is
+        # pointing at rather than the whole column underneath it.
+        def _lb_wheel(event):
+            self.queue_listbox.yview_scroll(-1 * (event.delta // 120), "units")
+            return "break"
+        self.queue_listbox.bind("<MouseWheel>", _lb_wheel)
 
         # Queue action buttons — row 0: scan/add, row 1: reorder/remove/clear
         qbtns = ctk.CTkFrame(left, fg_color=PANEL)
@@ -2452,18 +3088,22 @@ class App:
                       text_color=WHITE).grid(row=9, column=0, sticky="w", padx=14, pady=(10, 6))
         opts = ctk.CTkFrame(left, fg_color=PANEL)
         opts.grid(row=10, column=0, sticky="ew", padx=14, pady=(0, 10))
-        for textv, var in [
-            ("Open output folder when done",       self.open_output_var),
-            ("Show summary popup",                 self.summary_popup_var),
-            ("Play sound on completion",           self.sound_complete_var),
-            ("Play sound on errors",               self.sound_error_var),
-            ("Keep intermediate PFS",              self.keep_pfs_var),
-            ("Verify Output (Slower, Uses More RAM)", self.verify_output_var),
-            ("Auto-clear temp after success",      self.auto_clear_temp_var),
-            ("Verbose mkpfs output (debug)",       self.verbose_var),
+        for textv, var, setting_key in [
+            ("Skip games that are already compressed", self.skip_existing_var, "skip_existing"),
+            ("Open output folder when done",       self.open_output_var,    None),
+            ("Show summary popup",                 self.summary_popup_var,  None),
+            ("Play sound on completion",           self.sound_complete_var, None),
+            ("Play sound on errors",               self.sound_error_var,    None),
+            ("Keep intermediate PFS",              self.keep_pfs_var,       None),
+            ("Verify Output (Slower, Uses More RAM)", self.verify_output_var, None),
+            ("Auto-clear temp after success",      self.auto_clear_temp_var, "auto_clear_temp"),
+            ("Verbose mkpfs output (debug)",       self.verbose_var,        None),
         ]:
-            ctk.CTkCheckBox(opts, text=textv, variable=var, fg_color=GREEN, hover_color=GREEN2,
-                             text_color=WHITE).pack(anchor="w", pady=2)
+            cb = ctk.CTkCheckBox(opts, text=textv, variable=var, fg_color=GREEN, hover_color=GREEN2,
+                                  text_color=WHITE)
+            if setting_key:
+                cb.configure(command=lambda k=setting_key, v=var: save_settings({k: v.get()}))
+            cb.pack(anchor="w", pady=2)
 
         ctk.CTkLabel(opts,
                       text="  FOLDER button detects single games and multi-dump parent folders.",
@@ -2471,11 +3111,14 @@ class App:
                       justify="left").pack(anchor="w", padx=4, pady=(4, 6))
 
         # ── Center: Progress + Stages ────────────────────────────────────────
-        center = ctk.CTkFrame(content, fg_color=BLACK)
-        center.grid(row=0, column=1, sticky="nsew", padx=(0, 6))
+        # Scrollable: the compression tuning bar (CPU cores, level, block size)
+        # lives at the bottom of this column and used to be unreachable when the
+        # window was short.
+        center = ctk.CTkScrollableFrame(_center_pane, fg_color=BLACK, corner_radius=0,
+                                         scrollbar_button_color=CARD2,
+                                         scrollbar_button_hover_color=GREEN)
+        center.pack(fill="both", expand=True, padx=4)
         center.grid_columnconfigure(0, weight=1)
-        center.grid_rowconfigure(0, weight=0)
-        center.grid_rowconfigure(1, weight=0)
 
         progress = self.panel(center, row=0, column=0, sticky="ew", pady=(0, 8))
         progress.grid_columnconfigure(0, weight=1)
@@ -2490,15 +3133,18 @@ class App:
 
         ctk.CTkLabel(progress, text="CURRENT STAGE", text_color=WHITE,
                       font=ctk.CTkFont(size=12, weight="bold")).grid(row=2, column=0, sticky="w", padx=14)
-        self.stage_title_var = tk.StringVar(value="Ready")
-        self.stage_detail_var = tk.StringVar(value="Add a game and start queue.")
+        # Registered so the idle text follows a language switch too.
+        self.stage_title_var  = register_i18n_var(tk.StringVar(), "Ready")
+        self.stage_detail_var = register_i18n_var(tk.StringVar(), "Add a game and start queue.")
         self.stage_pct_var = tk.StringVar(value="0%")
         ctk.CTkLabel(progress, textvariable=self.stage_title_var, text_color=WHITE,
                       font=ctk.CTkFont(size=20, weight="bold")).grid(row=3, column=0, sticky="w", padx=14, pady=(3, 0))
         ctk.CTkLabel(progress, textvariable=self.stage_pct_var, text_color=("#1a7a40", "#4ade80"),
                       font=ctk.CTkFont(size=18, weight="bold")).grid(row=3, column=1, sticky="e", padx=14)
-        ctk.CTkLabel(progress, textvariable=self.stage_detail_var, text_color=MUTED,
-                      wraplength=500, justify="left").grid(row=4, column=0, columnspan=2, sticky="w", padx=14, pady=(0, 6))
+        _stage_detail_lbl = ctk.CTkLabel(progress, textvariable=self.stage_detail_var, text_color=MUTED,
+                                          wraplength=500, justify="left")
+        _stage_detail_lbl.grid(row=4, column=0, columnspan=2, sticky="w", padx=14, pady=(0, 6))
+        self._reflow(_center_pane, _stage_detail_lbl)
         self.stage_bar = ctk.CTkProgressBar(progress, progress_color=GREEN, fg_color=("#cccccc", "#242424"), height=12)
         self.stage_bar.grid(row=5, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 10))
         self.stage_bar.set(0)
@@ -2525,7 +3171,7 @@ class App:
                       text_color=WHITE, font=ctk.CTkFont(size=11, weight="bold"),
                       anchor="w"
                      ).grid(row=0, column=0, sticky="w", padx=10, pady=(7, 2))
-        ctk.CTkLabel(sm_bar,
+        _sm_lbl = ctk.CTkLabel(sm_bar,
                       text=(
                           "1.   Copy the .ffpfsc file to your PS5 internal storage or an external USB drive.\n"
                           "2.   Open ShadowMount on your PS5 and let it scan. "
@@ -2533,34 +3179,37 @@ class App:
                           "3.   Select the game from the XMB and launch it — it will appear and run like a standard title."
                       ),
                       text_color=MUTED, font=ctk.CTkFont(size=11),
-                      justify="left", anchor="w", wraplength=560
-                     ).grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
+                      justify="left", anchor="w", wraplength=560)
+        _sm_lbl.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 8))
+        self._reflow(_center_pane, _sm_lbl, padding=76)
 
         # ── Compression tuning bar — horizontal, uses the empty center space ──
         tune_bar = ctk.CTkFrame(progress, fg_color=CARD, corner_radius=6,
                                  border_width=1, border_color=BORDER2)
         tune_bar.grid(row=9, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12))
+        # One control per row: the old single-row layout needed ~600 px and was
+        # clipped edge-first whenever the column was narrowed, taking the CPU
+        # core selector with it.
         tune_bar.grid_columnconfigure(1, weight=1)
-        tune_bar.grid_columnconfigure(4, weight=1)
 
         ctk.CTkLabel(tune_bar, text="COMPRESSION TUNING",
                       text_color=WHITE, font=ctk.CTkFont(size=11, weight="bold"),
-                      anchor="w").grid(row=0, column=0, columnspan=7, sticky="w",
+                      anchor="w").grid(row=0, column=0, columnspan=3, sticky="w",
                                        padx=10, pady=(7, 3))
 
         # ── Compression level ──
         ctk.CTkLabel(tune_bar, text="Level (0-9):", text_color=MUTED,
                       font=ctk.CTkFont(size=11), anchor="e").grid(
-            row=1, column=0, sticky="e", padx=(10, 4), pady=(0, 8))
+            row=1, column=0, sticky="e", padx=(10, 6), pady=(0, 6))
         ctk.CTkSlider(tune_bar, from_=0, to=9, number_of_steps=9,
                        variable=self.compression_level_var,
                        fg_color=BORDER2, progress_color=GREEN,
                        button_color=GREEN, button_hover_color=GREEN2,
-                       height=16).grid(row=1, column=1, sticky="ew", padx=(0, 4), pady=(0, 8))
+                       height=16).grid(row=1, column=1, sticky="ew", padx=(0, 6), pady=(0, 6))
         self._comp_level_lbl = ctk.CTkLabel(tune_bar, text=str(self.compression_level_var.get()),
                                              text_color=GREEN, font=ctk.CTkFont(size=12, weight="bold"),
-                                             width=22, anchor="w")
-        self._comp_level_lbl.grid(row=1, column=2, padx=(0, 18), pady=(0, 8))
+                                             width=38, anchor="w")
+        self._comp_level_lbl.grid(row=1, column=2, sticky="w", padx=(0, 10), pady=(0, 6))
         def _update_comp_lbl(*_):
             self._comp_level_lbl.configure(text=str(self.compression_level_var.get()))
         self.compression_level_var.trace_add("write", _update_comp_lbl)
@@ -2568,16 +3217,16 @@ class App:
         # ── CPU cores ──
         ctk.CTkLabel(tune_bar, text="CPU cores (0=auto):", text_color=MUTED,
                       font=ctk.CTkFont(size=11), anchor="e").grid(
-            row=1, column=3, sticky="e", padx=(0, 4), pady=(0, 8))
+            row=2, column=0, sticky="e", padx=(10, 6), pady=(0, 6))
         ctk.CTkSlider(tune_bar, from_=0, to=16, number_of_steps=16,
                        variable=self.cpu_count_var,
                        fg_color=BORDER2, progress_color=GREEN,
                        button_color=GREEN, button_hover_color=GREEN2,
-                       height=16).grid(row=1, column=4, sticky="ew", padx=(0, 4), pady=(0, 8))
+                       height=16).grid(row=2, column=1, sticky="ew", padx=(0, 6), pady=(0, 6))
         self._cpu_count_lbl = ctk.CTkLabel(tune_bar, text="auto",
                                             text_color=GREEN, font=ctk.CTkFont(size=12, weight="bold"),
-                                            width=34, anchor="w")
-        self._cpu_count_lbl.grid(row=1, column=5, padx=(0, 10), pady=(0, 8))
+                                            width=38, anchor="w")
+        self._cpu_count_lbl.grid(row=2, column=2, sticky="w", padx=(0, 10), pady=(0, 6))
         def _update_cpu_lbl(*_):
             v = self.cpu_count_var.get()
             self._cpu_count_lbl.configure(text="auto" if v == 0 else str(v))
@@ -2586,7 +3235,7 @@ class App:
         # ── Block size ──  (new in MkPFS 0.0.7/0.0.8 — smaller = less waste for small files)
         ctk.CTkLabel(tune_bar, text="Block size:", text_color=MUTED,
                       font=ctk.CTkFont(size=11), anchor="e").grid(
-            row=1, column=6, sticky="e", padx=(14, 4), pady=(0, 8))
+            row=3, column=0, sticky="e", padx=(10, 6), pady=(0, 6))
         _block_opts = ["auto", "auto-fit", "65536", "32768", "16384"]
         _block_menu = ctk.CTkOptionMenu(
             tune_bar, values=_block_opts, variable=self.block_size_var,
@@ -2596,14 +3245,15 @@ class App:
             font=ctk.CTkFont(size=11),
             command=lambda v: save_settings({"block_size": v}),
         )
-        _block_menu.grid(row=1, column=7, sticky="w", padx=(0, 10), pady=(0, 8))
+        _block_menu.grid(row=3, column=1, sticky="w", padx=(0, 6), pady=(0, 6))
 
         # ── Preset profiles ──
         ctk.CTkLabel(tune_bar, text="Presets:", text_color=MUTED,
                       font=ctk.CTkFont(size=11), anchor="e").grid(
-            row=2, column=0, sticky="e", padx=(10, 6), pady=(0, 8))
+            row=4, column=0, sticky="e", padx=(10, 6), pady=(0, 8))
         _preset_frame = ctk.CTkFrame(tune_bar, fg_color="transparent")
-        _preset_frame.grid(row=2, column=1, columnspan=7, sticky="w", pady=(0, 8))
+        _preset_frame.grid(row=4, column=1, columnspan=2, sticky="ew", padx=(0, 10), pady=(0, 8))
+        _preset_frame.grid_columnconfigure((0, 1, 2, 3), weight=1, uniform="preset")
 
         def _apply_preset(level, cpu, block):
             self.compression_level_var.set(level)
@@ -2611,24 +3261,25 @@ class App:
             self.block_size_var.set(block)
             save_settings({"compression_level": level, "cpu_count": cpu, "block_size": block})
 
-        for label, tip, args in [
+        for col, (label, tip, args) in enumerate([
             ("Fast",         "Level 3, auto cores, auto block",       (3,  0, "auto")),
             ("Balanced",     "Level 5, auto cores, auto block",       (5,  0, "auto")),
             ("Max",          "Level 9, auto cores, auto block",       (9,  0, "auto")),
             ("Low RAM",      "Level 5, 1 core, 16384 block",         (5,  1, "16384")),
-        ]:
-            btn = ctk.CTkButton(_preset_frame, text=label, width=80, height=22,
+        ]):
+            btn = ctk.CTkButton(_preset_frame, text=label, width=56, height=22,
                                   fg_color=CARD2, hover_color=GREEN2, text_color=WHITE,
                                   font=ctk.CTkFont(size=11),
                                   command=lambda a=args: _apply_preset(*a))
-            btn.pack(side="left", padx=(0, 6))
+            btn.grid(row=0, column=col, sticky="ew", padx=(0, 4))
             btn._ctk_tooltip = tip  # stored for potential future tooltip
 
         # ── Right: Game Details + Command Preview ────────────────────────────
-        right = ctk.CTkFrame(content, fg_color=BLACK)
-        right.grid(row=0, column=2, sticky="nsew", padx=(6, 0))
+        right = ctk.CTkScrollableFrame(_right_pane, fg_color=BLACK, corner_radius=0,
+                                        scrollbar_button_color=CARD2,
+                                        scrollbar_button_hover_color=GREEN)
+        right.pack(fill="both", expand=True, padx=(4, 0))
         right.grid_columnconfigure(0, weight=1)
-        right.grid_rowconfigure(1, weight=1)
 
         details = self.panel(right, row=0, column=0, sticky="ew", pady=(0, 8))
         details.grid_columnconfigure(1, weight=1)
@@ -2646,11 +3297,12 @@ class App:
 
         ctk.CTkLabel(details, text="GAME DETAILS", text_color=WHITE,
                       font=ctk.CTkFont(size=13, weight="bold")).grid(row=0, column=1, sticky="w", padx=4, pady=(10, 4))
-        self.game_name_var = tk.StringVar(value="Name: No game selected")
-        self.title_var = tk.StringVar(value="Title ID: —")
-        self.source_detail_var = tk.StringVar(value="Source: —")
-        self.orig_var = tk.StringVar(value="Original Size: —")
-        self.files_var = tk.StringVar(value="Files: —")
+        # Registered so the idle placeholders follow a language switch.
+        self.game_name_var     = register_i18n_var(tk.StringVar(), "Name: No game selected")
+        self.title_var         = register_i18n_var(tk.StringVar(), "Title ID: —")
+        self.source_detail_var = register_i18n_var(tk.StringVar(), "Source: —")
+        self.orig_var          = register_i18n_var(tk.StringVar(), "Original Size: —")
+        self.files_var         = register_i18n_var(tk.StringVar(), "Files: —")
         info = ctk.CTkFrame(details, fg_color=PANEL)
         info.grid(row=1, column=1, sticky="nsew", padx=(4, 10), pady=(0, 10))
         for v in [self.game_name_var, self.title_var, self.orig_var, self.files_var, self.source_detail_var]:
@@ -2671,6 +3323,7 @@ class App:
                                            text_color=MUTED, wraplength=360, justify="left",
                                            font=ctk.CTkFont(size=11))
         self.command_label.grid(row=1, column=0, sticky="nw", padx=14, pady=(0, 10))
+        self._reflow(_right_pane, self.command_label)
 
         # ── Bottom: Tabbed Logs / Status / History / Statistics ─────────────
         bottom = ctk.CTkFrame(self._bot_pane, fg_color=PANEL, border_width=1,
@@ -2686,15 +3339,13 @@ class App:
                                            text_color=WHITE)
         self.bottom_tabs.grid(row=0, column=0, sticky="nsew", padx=12, pady=(10, 10))
 
-        self.bottom_tabs.add("Logs")
-        self.bottom_tabs.add("Status & Stats")
-        self.bottom_tabs.add("Recent Compressions")
-        self.bottom_tabs.add("Statistics")
-        self.bottom_tabs.add("Compatibility")
-        self.bottom_tabs.add("Help / FAQ")
+        # CTkTabview keys its pages by the displayed name, so tabs are added
+        # already translated and renamed in place when the language changes.
+        for _tab_name in self.TAB_NAMES:
+            self.bottom_tabs.add(t(_tab_name))
 
         # ── Status & Stats tab — 3 columns side by side ──────────────────────
-        ss_tab = self.bottom_tabs.tab("Status & Stats")
+        ss_tab = self.bottom_tabs.tab(t("Status & Stats"))
         ss_tab.grid_columnconfigure(0, weight=2)   # STATUS
         ss_tab.grid_columnconfigure(1, weight=2)   # STATS
         ss_tab.grid_columnconfigure(2, weight=2)   # TOOLS
@@ -2704,8 +3355,8 @@ class App:
         status = self.panel(ss_tab, row=0, column=0, sticky="nsew", padx=(0, 4), pady=4)
         ctk.CTkLabel(status, text="STATUS", text_color=WHITE,
                       font=ctk.CTkFont(size=13, weight="bold")).pack(anchor="w", padx=12, pady=(10, 4))
-        self.big_status_var = tk.StringVar(value="Ready")
-        self.big_detail_var = tk.StringVar(value="Waiting for a game.")
+        self.big_status_var = register_i18n_var(tk.StringVar(), "Ready")
+        self.big_detail_var = register_i18n_var(tk.StringVar(), "Waiting for a game.")
         ctk.CTkLabel(status, textvariable=self.big_status_var, text_color=WHITE,
                       font=ctk.CTkFont(size=18, weight="bold")).pack(anchor="w", padx=12)
         ctk.CTkLabel(status, textvariable=self.big_detail_var, text_color=MUTED,
@@ -2741,7 +3392,7 @@ class App:
         self._button(tools_frame, "📋  Copy Last Result",  self.copy_last_result,    height=34).pack(fill="x", padx=12, pady=(3, 10))
 
         # Logs tab
-        log_tab = self.bottom_tabs.tab("Logs")
+        log_tab = self.bottom_tabs.tab(t("Logs"))
         log_tab.grid_columnconfigure(0, weight=1)
         log_tab.grid_rowconfigure(0, weight=1)
         log_head = ctk.CTkFrame(log_tab, fg_color=BLACK)
@@ -2783,19 +3434,20 @@ class App:
 
         # Per-level colour tags on the underlying tk.Text widget
         try:
-            t = self.log_box._textbox
-            t.tag_configure("SUCCESS",  foreground="#4ade80")
-            t.tag_configure("OK",       foreground="#4ade80")
-            t.tag_configure("ERROR",    foreground="#f87171")
-            t.tag_configure("WARN",     foreground="#facc15")
-            t.tag_configure("INFO",     foreground="#94a3b8")
-            t.tag_configure("PROGRESS", foreground="#60a5fa")
-            t.tag_configure("DEBUG",    foreground="#555555")
+            # Not named `t`: that would shadow the module-level translator.
+            textbox = self.log_box._textbox
+            textbox.tag_configure("SUCCESS",  foreground="#4ade80")
+            textbox.tag_configure("OK",       foreground="#4ade80")
+            textbox.tag_configure("ERROR",    foreground="#f87171")
+            textbox.tag_configure("WARN",     foreground="#facc15")
+            textbox.tag_configure("INFO",     foreground="#94a3b8")
+            textbox.tag_configure("PROGRESS", foreground="#60a5fa")
+            textbox.tag_configure("DEBUG",    foreground="#555555")
         except Exception:
             pass
 
         # History tab
-        hist_tab = self.bottom_tabs.tab("Recent Compressions")
+        hist_tab = self.bottom_tabs.tab(t("Recent Compressions"))
         hist_tab.grid_columnconfigure(0, weight=1)
         hist_tab.grid_rowconfigure(1, weight=1)
         hist_head = ctk.CTkFrame(hist_tab, fg_color=BLACK)
@@ -2810,7 +3462,7 @@ class App:
         self.refresh_history()
 
         # Statistics tab
-        stats_tab = self.bottom_tabs.tab("Statistics")
+        stats_tab = self.bottom_tabs.tab(t("Statistics"))
         stats_tab.grid_columnconfigure(0, weight=1)
         stats_tab.grid_rowconfigure(1, weight=1)
         ctk.CTkLabel(stats_tab, text="COMPRESSION STATISTICS", text_color=WHITE,
@@ -2822,7 +3474,7 @@ class App:
         self.refresh_statistics()
 
         # ── Compatibility tab ─────────────────────────────────────────────────
-        compat_tab = self.bottom_tabs.tab("Compatibility")
+        compat_tab = self.bottom_tabs.tab(t("Compatibility"))
         compat_tab.grid_columnconfigure(0, weight=1)
         compat_tab.grid_columnconfigure(1, weight=2)
         compat_tab.grid_rowconfigure(0, weight=1)
@@ -2975,7 +3627,7 @@ class App:
         self.refresh_compat_list()
 
         # ── Help / FAQ tab ────────────────────────────────────────────────────
-        help_tab = self.bottom_tabs.tab("Help / FAQ")
+        help_tab = self.bottom_tabs.tab(t("Help / FAQ"))
         help_tab.grid_columnconfigure(0, weight=1)
         help_tab.grid_rowconfigure(1, weight=1)
 
@@ -3036,8 +3688,9 @@ class App:
         )
         _faq_section(
             "Q: The output .ffpfsc file is over 4 GB and won't copy to my drive.",
-            "A: Your OUTPUT or TEMP folder is on an exFAT drive, which has a 4 GB per-file limit.\n"
-            "   Move the Output and Temp folders to an NTFS drive (e.g. C:\\ or D:\\)."
+            "A: The target drive is formatted FAT32, which caps a single file at 4 GB.\n"
+            "   NTFS and exFAT both handle far larger files — exFAT is fine for output.\n"
+            "   Only FAT32 / FAT drives need to be avoided."
         )
         _faq_section(
             "Q: Compression is very slow — how do I speed it up?",
@@ -3087,7 +3740,7 @@ class App:
         # Footer
         footer = ctk.CTkFrame(main, fg_color=BLACK)
         footer.grid(row=5, column=0, sticky="ew", padx=18, pady=(0, 8))
-        self.footer_var = tk.StringVar(value="● Ready")
+        self.footer_var = register_i18n_var(tk.StringVar(), "● Ready")
         ctk.CTkLabel(footer, textvariable=self.footer_var, text_color=("#1a7a40", "#4ade80")).pack(side="left")
         ctk.CTkLabel(footer, text=f"{APP_VERSION}  |  Bizkut Backend  |  {MKPFS_NAME} v{MKPFS_VERSION}", text_color=MUTED).pack(side="right")
 
@@ -3098,6 +3751,48 @@ class App:
             self.root.drop_target_register(DND_FILES)
             self.root.dnd_bind("<<Drop>>", self._on_drop)
 
+    # ── Language toggle ──────────────────────────────────────────────────────
+    # Canonical (English) tab keys; the tabview stores them under their
+    # displayed name, so every lookup goes through t().
+    TAB_NAMES = ("Logs", "Status & Stats", "Recent Compressions",
+                 "Statistics", "Compatibility", "Help / FAQ")
+
+    def _lang_button_text(self) -> str:
+        """Label the button with the language it switches TO, not the current one."""
+        return "🌐  Türkçe" if current_language() == "en" else "🌐  English"
+
+    def _toggle_language(self):
+        new_lang = "tr" if current_language() == "en" else "en"
+        # Captured before the switch: renaming needs the name each tab has now.
+        previous_tabs = {key: t(key) for key in self.TAB_NAMES}
+        set_language(new_lang)
+        for key in self.TAB_NAMES:
+            old_name, new_name = previous_tabs[key], t(key)
+            if old_name != new_name:
+                try:
+                    self.bottom_tabs.rename(old_name, new_name)
+                except Exception:
+                    pass
+        save_settings({"language": new_lang})
+        try:
+            # The button's own label is a switch target, so it is set directly
+            # rather than being translated like the rest of the interface.
+            self._lang_btn.configure(text=self._lang_button_text())
+        except Exception:
+            pass
+        # Fields built from f-strings hold their old wording until rebuilt.
+        try:
+            self.update_queue_box()
+            detail_item = getattr(self, "_details_item", None)
+            if detail_item is not None:
+                self.update_game_details(detail_item)
+            else:
+                self.game_name_var.set(t("Name: No game selected"))
+        except Exception:
+            pass
+        self.log("OK", "Dil Türkçe olarak ayarlandı." if new_lang == "tr"
+                       else "Language set to English.")
+
     # ── Theme toggle ─────────────────────────────────────────────────────────
     def _toggle_theme(self):
         self._theme = "light" if self._theme == "dark" else "dark"
@@ -3105,10 +3800,12 @@ class App:
         # Update the plain tk.PanedWindow sash color (CTk doesn't manage it)
         try:
             _dark = self._theme == "dark"
-            self._paned.configure(bg="#1a1a2e" if _dark else "#c0c0c0")
+            _sash_bg = "#1a1a2e" if _dark else "#c0c0c0"
             _pane_bg = "#050505" if _dark else "#f0f0f0"
-            for child in self._paned.panes():
-                self._paned.nametowidget(child).configure(bg=_pane_bg)
+            for pw in (self._paned, self._content_paned):
+                pw.configure(bg=_sash_bg)
+                for child in pw.panes():
+                    pw.nametowidget(child).configure(bg=_pane_bg)
         except Exception:
             pass
 
@@ -3197,6 +3894,22 @@ class App:
         scroll.pack(fill="both", expand=True, padx=20, pady=(0, 10))
 
         _ITEMS = [
+            ("↔", "Flexible Layout",
+             "The window fits your actual desktop and display scaling, each of the three columns "
+             "can be widened by dragging its sash, and every column scrolls on its own. "
+             "\"Reset Layout\" puts everything back."),
+            ("🌍", "Turkish / English Interface",
+             "Switch the whole interface between English and Turkish with the EN / TR button in "
+             "the header. Your choice is remembered."),
+            ("⏭", "Skip Already-Compressed Games",
+             "Games that already have a .ffpfsc in the output folder are skipped instead of being "
+             "rebuilt — both in the queue and in the backend."),
+            ("🏷", "Output Named After the Game",
+             "Output files are now TITLEID-Game Name.ffpfsc, taken from the game's own "
+             "param.json instead of the title ID alone."),
+            ("🩹", "Many Fixes",
+             "UTF-8 crash on Turkish Windows, exFAT wrongly flagged as 4 GB limited, free space "
+             "checked the way mkpfs actually checks it, and more."),
             ("🌐", "Community Compatibility Database",
              "Share how well your game works after compressing. Vote-based — one bad report can't override everyone."),
             ("📋", "Community List Viewer",
@@ -3286,7 +3999,7 @@ class App:
             return
         step = self._TOUR_STEPS[idx]
         if "tab" in step:
-            self.bottom_tabs.set(step["tab"])
+            self.bottom_tabs.set(t(step["tab"]))
         self.root.after(180, lambda: self._show_tour_tip(idx, step, total))
 
     def _show_tour_tip(self, idx: int, step: dict, total: int):
@@ -3409,15 +4122,49 @@ class App:
             f"⚠  Saved folder path(s) no longer exist and were cleared:\n"
             f"{paths}\n"
             f"  Please set new OUTPUT and TEMP folders before starting.")
-        self.bottom_tabs.set("Logs")
+        self.bottom_tabs.set(t("Logs"))
 
-    def _init_sash(self):
+    def _init_sash(self, attempt: int = 0):
+        """Place every sash proportionally once the panes have real dimensions.
+
+        Called early, before the window manager has sized anything, so it retries
+        until the paned windows report a usable size. Without this the columns
+        keep their requested widths and the right-hand column collapses to a
+        sliver that clips its own contents.
+        """
+        done = True
+
         try:
-            total = self._paned.winfo_height()
-            if total > 10:
-                self._paned.sash_place(0, 0, int(total * 0.62))
+            height = self._paned.winfo_height()
+            if height > 200:
+                self._paned.sash_place(0, 0, int(height * 0.62))
+            else:
+                done = False
         except Exception:
             pass
+
+        try:
+            width = self._content_paned.winfo_width()
+            if width > 400:
+                self._content_paned.sash_place(0, int(width * 0.30), 0)
+                self._content_paned.sash_place(1, int(width * 0.72), 0)
+            else:
+                done = False
+        except Exception:
+            pass
+
+        if not done and attempt < 25:
+            self.root.after(120, lambda: self._init_sash(attempt + 1))
+
+    def _reset_layout(self):
+        """Restore the default pane sizes.
+
+        A sash dragged all the way to an edge collapses a column, and there is
+        no obvious way back — this is that way back.
+        """
+        self._compact_mode = False
+        self._init_sash()
+        self.log("INFO", "Layout reset to default pane sizes.")
 
     def open_settings(self):
         if self._settings_win and self._settings_win.winfo_exists():
@@ -3450,7 +4197,59 @@ class App:
         box.pack(fill="both", expand=True, padx=16, pady=(4, 8))
 
         CHANGELOG = """\
-v1.3.0  (current)
+v1.4.0  (current)   —   fork by ufukasia
+──────────────────────────────────────────────────
+FLEXIBLE LAYOUT
+  • Window now opens to fit the actual desktop and
+    respects Windows display scaling (125% / 150%)
+    — controls no longer fall off screen edges
+  • The three columns sit behind draggable sashes,
+    so any of them can be widened or narrowed
+  • Every column scrolls on its own — nothing is
+    stranded below the window edge on small screens
+  • Long text re-wraps live while a column is resized
+  • "Reset Layout" button restores the default sizes
+  • Queue list: horizontal scrollbar + the mouse wheel
+    scrolls the list under the pointer, not the column
+
+TURKISH / ENGLISH INTERFACE
+  • New EN / TR button in the header switches the
+    whole interface live; the choice is remembered
+  • Backend log output stays English for bug reports
+
+SKIP ALREADY-COMPRESSED GAMES
+  • "Skip games that are already compressed" option
+    (on by default) — the queue drains finished games
+    before a batch starts, and the backend double
+    checks each item with --skip-existing
+  • Recognises both TITLEID.ffpfsc and the new
+    TITLEID-Game Name.ffpfsc naming
+
+OUTPUT NAMED AFTER THE GAME
+  • Output is now TITLEID-Game Name.ffpfsc, read from
+    sce_sys/param.json (falls back to the folder name)
+  • Characters Windows rejects are replaced, and a
+    title ID already present in the name is not
+    repeated
+
+FIXED
+  • UnicodeEncodeError killed finished builds on
+    Turkish (cp1254) and other non-UTF-8 Windows
+    locales — all pipes are UTF-8 now
+  • exFAT output drives were wrongly reported as
+    "4 GB limit". Only FAT32/FAT has that cap; exFAT
+    is a valid output target
+  • Free space is checked against the rule mkpfs
+    actually applies (full uncompressed source size)
+    before a run starts, instead of failing hours in
+  • Space dialog blocks a run that cannot succeed
+    instead of auto-proceeding into a certain failure
+  • Error hints no longer blame the filesystem for
+    unrelated failures
+  • Options that belong in settings.json (skip
+    existing, auto-clear temp) are saved when toggled
+
+v1.3.0
 ──────────────────────────────────────────────────
 MkPFS 0.0.9 — SINGLE-PASS PIPELINE
   • pack folder now streams directly to .ffpfsc in
@@ -3627,6 +4426,15 @@ v1.0
                         f"You're running the latest version ({APP_VERSION})."
                     ))
             except Exception as exc:
+                # A repository with no published release answers 404 — that means
+                # "nothing newer than what you are running", not a failure.
+                if getattr(exc, "code", None) == 404:
+                    if not silent:
+                        self.root.after(0, lambda: messagebox.showinfo(
+                            "Up to date",
+                            f"You're running the latest version ({APP_VERSION})."
+                        ))
+                    return
                 if not silent:
                     self.root.after(0, lambda: messagebox.showerror(
                         "Update check failed",
@@ -3743,11 +4551,11 @@ v1.0
             self.update_command_preview()
 
     def preview_light(self, p: Path):
-        self.game_name_var.set(f"Name: {guess_game_name(p)}")
-        self.title_var.set(f"Title ID: {parse_title_id(p)}")
-        self.source_detail_var.set(f"Source: {p}")
-        self.orig_var.set("Original Size: click Scan / Add")
-        self.files_var.set("Files: click Scan / Add")
+        self.game_name_var.set(tfield("Name", guess_game_name(p)))
+        self.title_var.set(tfield("Title ID", parse_title_id(p)))
+        self.source_detail_var.set(tfield("Source", p))
+        self.orig_var.set(tfield("Original Size", t("click Scan / Add")))
+        self.files_var.set(tfield("Files", t("click Scan / Add")))
         self.load_art(find_artwork(p))
         self.update_command_preview()
 
@@ -3923,7 +4731,7 @@ v1.0
                             "Scanning Files", 0, 0, "00:00", "—", "—")
         # Show Logs tab so the user can watch per-file lines
         try:
-            self.bottom_tabs.set("Logs")
+            self.bottom_tabs.set(t("Logs"))
         except Exception:
             pass
 
@@ -3989,7 +4797,7 @@ v1.0
         self.status_update("Extracting", f"Unpacking {archive.name}…  0%",
                             "Scanning Files", 0, 0, "00:00", "—", "—")
         try:
-            self.bottom_tabs.set("Logs")
+            self.bottom_tabs.set(t("Logs"))
         except Exception:
             pass
 
@@ -4123,9 +4931,9 @@ v1.0
 
         self.queue_listbox.delete(0, "end")
         if not self.queue:
-            self.queue_listbox.insert("end", "  Queue is empty")
+            self.queue_listbox.insert("end", t("  Queue is empty"))
             self.queue_listbox.itemconfig(0, fg="#555555")
-            self.queue_total_var.set("Total: 0 game(s)")
+            self.queue_total_var.set(t("Total: 0 game(s)"))
             self._details_item = None
             return
 
@@ -4141,7 +4949,10 @@ v1.0
             elif item.status == "Done":
                 self.queue_listbox.itemconfig(i, fg="#888888")
 
-        self.queue_total_var.set(f"Total: {len(self.queue)} game(s)  |  {format_size(total)}")
+        _total_word = "Toplam" if current_language() == "tr" else "Total"
+        _game_word  = "oyun" if current_language() == "tr" else "game(s)"
+        self.queue_total_var.set(
+            f"{_total_word}: {len(self.queue)} {_game_word}  |  {format_size(total)}")
 
         # Find the target item's new index; fall back to row 0
         try:
@@ -4160,11 +4971,11 @@ v1.0
 
     def update_game_details(self, item):
         self._details_item = item   # record before any call that might raise
-        self.game_name_var.set(f"Name: {item.name}")
-        self.title_var.set(f"Title ID: {item.title_id}")
-        self.source_detail_var.set(f"Source: {item.path}")
-        self.orig_var.set(f"Original Size: {format_size(item.size)}")
-        self.files_var.set(f"Files: {item.files:,}")
+        self.game_name_var.set(tfield("Name", item.name))
+        self.title_var.set(tfield("Title ID", item.title_id))
+        self.source_detail_var.set(tfield("Source", item.path))
+        self.orig_var.set(tfield("Original Size", format_size(item.size)))
+        self.files_var.set(tfield("Files", f"{item.files:,}"))
         self.load_art(item.artwork)
         self._refresh_space_for_item(item)
         self.update_command_preview()
@@ -4265,7 +5076,12 @@ v1.0
         temp_str = self.temp_var.get().strip()
         if temp_str:
             cmd += ["--temp-dir", temp_str]
-        cmd.append("--overwrite")
+        # Backstop for anything the queue pre-check cannot see (e.g. --batch,
+        # where one backend run walks several games itself).
+        if self.skip_existing_var.get():
+            cmd.append("--skip-existing")
+        else:
+            cmd.append("--overwrite")
         return cmd, backend, out if out.suffix.lower() != ".ffpfsc" else out.parent, temp
 
     # ── Feature 5: Auto-clear temp ────────────────────────────────────────────
@@ -4294,18 +5110,85 @@ v1.0
             msg += f" ({errors} item(s) could not be removed)"
         self.log("OK", msg)
 
+    # ── Already-compressed detection ──────────────────────────────────────────
+    def _existing_output(self, item):
+        """Return an already-built .ffpfsc for `item`, or None.
+
+        Recognises both the old 'TITLEID.ffpfsc' names and the current
+        'TITLEID-Game Name.ffpfsc' ones, so games compressed by earlier versions
+        still count as done.
+        """
+        out_root = self.output_var.get().strip()
+        tid = str(getattr(item, "title_id", "") or "").strip().upper()
+        # Placeholder glyphs are used when no real title ID could be parsed.
+        if not out_root or not tid or not re.fullmatch(r"[A-Z]{4}\d{5}", tid):
+            return None
+
+        folders = [Path(out_root)]
+        if self.per_game_folder_var.get() and item.name:
+            folders.insert(0, Path(out_root) / item.name)
+
+        for folder in folders:
+            try:
+                if not folder.is_dir():
+                    continue
+                for p in folder.glob("*.ffpfsc"):
+                    try:
+                        if not p.is_file() or p.stat().st_size <= 0:
+                            continue
+                    except OSError:
+                        continue
+                    stem = p.stem.upper()
+                    if stem == tid or any(stem.startswith(tid + s) for s in ("-", " ", "_")):
+                        return p
+            except OSError:
+                continue
+        return None
+
+    def _drain_already_compressed(self) -> int:
+        """Pop queued games that are already compressed. Returns how many."""
+        if not self.skip_existing_var.get():
+            return 0
+        skipped = 0
+        while self.queue:
+            item = self.queue[0]
+            if getattr(item, "archive_path", None):
+                break          # still packed — can't tell until it is extracted
+            existing = self._existing_output(item)
+            if not existing:
+                break
+            try:
+                size_txt = format_size(existing.stat().st_size)
+            except OSError:
+                size_txt = "unknown size"
+            item.status = "Skipped"
+            self.log("OK",
+                     f"⏭  Already compressed — skipping {item.name}\n"
+                     f"      Existing file: {existing.name}  ({size_txt})")
+            self.queue.pop(0)
+            self._batch_skipped += 1
+            skipped += 1
+        if skipped:
+            self.update_queue_box()
+            self._update_batch_counter()
+        return skipped
+
     # ── Feature 4: Batch auto-advance ─────────────────────────────────────────
     def _update_batch_counter(self):
         if not self._batch_running:
             self.batch_counter_var.set("")
             return
         current = self._batch_done + self._batch_failed + 1
+        skipped = f"  ⏭ {self._batch_skipped}" if self._batch_skipped else ""
         self.batch_counter_var.set(
-            f"Game {current}/{self._batch_total}  |  ✓ {self._batch_done}  ✗ {self._batch_failed}"
+            f"Game {current}/{self._batch_total}  |  ✓ {self._batch_done}  ✗ {self._batch_failed}{skipped}"
         )
 
     def _batch_auto_start(self):
         """Start the next game in the queue — rechecks disk space before each game."""
+        # Games finished in an earlier run are dropped here, before any dialog
+        # or backend launch, so the batch walks straight past them.
+        self._drain_already_compressed()
         if not self.queue:
             self._batch_running = False
             self.start_btn.configure(state="normal")
@@ -4389,8 +5272,10 @@ v1.0
         total = self._batch_total
         done  = self._batch_done
         fail  = self._batch_failed
+        skip  = self._batch_skipped
+        skip_txt = f"  ⏭ {skip}/{total}" if skip else ""
         self.batch_counter_var.set(
-            f"Batch complete  |  ✓ {done}/{total}  ✗ {fail}/{total}"
+            f"Batch complete  |  ✓ {done}/{total}  ✗ {fail}/{total}{skip_txt}"
         )
         msg = (
             f"Batch compression finished.\n\n"
@@ -4398,10 +5283,15 @@ v1.0
             f"Successful:   {done}\n"
             f"Failed:       {fail}\n"
         )
+        if skip:
+            msg += f"Already done: {skip}  (skipped)\n"
         if fail == 0:
-            self.log("SUCCESS", f"🏁 Batch complete — all {total} game(s) compressed successfully.")
+            self.log("SUCCESS",
+                     f"🏁 Batch complete — {done} game(s) compressed"
+                     + (f", {skip} already done and skipped." if skip else " successfully."))
         else:
-            self.log("WARN", f"🏁 Batch complete — {done}/{total} succeeded, {fail} failed.")
+            self.log("WARN", f"🏁 Batch complete — {done}/{total} succeeded, {fail} failed"
+                             + (f", {skip} skipped." if skip else "."))
         messagebox.showinfo("Batch Complete", msg)
 
     # ── Start / Cancel ────────────────────────────────────────────────────────
@@ -4661,6 +5551,27 @@ v1.0
             self.add_source_to_queue()
             return
 
+        # Drop games that already have a .ffpfsc in the output folder before
+        # anything else runs, so the user is never made to wait through a
+        # compression they have already done.
+        self._batch_skipped = 0
+        queued_before = len(self.queue)
+        self._drain_already_compressed()
+        if not self.queue:
+            self._batch_running = False
+            self._update_batch_counter()
+            self.log("OK", f"Nothing to do — all {queued_before} queued game(s) are already compressed.")
+            self.status_update("Ready", "All queued games are already compressed.",
+                               "Ready", 0, 0, "00:00", "—", "—")
+            messagebox.showinfo(
+                "Already compressed",
+                f"All {queued_before} game(s) in the queue already have a .ffpfsc "
+                f"in the output folder, so nothing was compressed.\n\n"
+                f"To rebuild them anyway, turn off \"Skip games that are already compressed\" "
+                f"in Options."
+            )
+            return
+
         item = self.queue[0]
 
         # ── Archive placeholder — extract first, then compress ────────────────
@@ -4711,8 +5622,9 @@ v1.0
         except Exception:
             pass
 
-        # Initialise batch counters on a fresh (non-auto-advance) start
-        self._batch_total   = len(self.queue)
+        # Initialise batch counters on a fresh (non-auto-advance) start.
+        # Skipped games stay in the total so the progress reads "3/5", not "3/3".
+        self._batch_total   = len(self.queue) + self._batch_skipped
         self._batch_done    = 0
         self._batch_failed  = 0
         self._batch_running = self._batch_total > 0
@@ -5601,13 +6513,14 @@ v1.0
         full_names   = [s[0] for s in _STAGE_DEFS]
         current_idx  = full_names.index(current_stage) if current_stage in full_names else -1
         for i, (lbl, (full, short)) in enumerate(zip(self._stage_labels, _STAGE_DEFS)):
+            label = t(short)
             if current_idx >= 0 and i < current_idx:
-                lbl.configure(text=f"✓ {short}", text_color=("#1a7a40", "#4ade80"))
+                lbl.configure(text=f"✓ {label}", text_color=("#1a7a40", "#4ade80"))
             elif i == current_idx:
                 dp = min(int(pct), 99) if full == "Building Image" else int(pct)
-                lbl.configure(text=f"▶ {short} {dp}%", text_color=YELLOW)
+                lbl.configure(text=f"▶ {label} {dp}%", text_color=YELLOW)
             else:
-                lbl.configure(text=f"○ {short}", text_color=MUTED)
+                lbl.configure(text=f"○ {label}", text_color=MUTED)
 
     # ── Poll loop ─────────────────────────────────────────────────────────────
     def _tick_elapsed(self):
@@ -5805,10 +6718,12 @@ v1.0
         try:
             while True:
                 title, detail, stage, stage_pct, overall_pct, elapsed, speed, eta = self.status_q.get_nowait()
-                self.big_status_var.set(title)
-                self.big_detail_var.set(detail)
-                self.stage_title_var.set(stage)
-                self.stage_detail_var.set(detail)
+                # Stage/status names come from a fixed vocabulary, so they are
+                # translated here; the detail line is free-form backend text.
+                self.big_status_var.set(t(title))
+                self.big_detail_var.set(t(detail))
+                self.stage_title_var.set(t(stage))
+                self.stage_detail_var.set(t(detail))
                 self.stage_pct_var.set(f"{int(stage_pct)}%")
                 self.overall_pct_var.set(f"{int(overall_pct)}%")
                 self.stage_bar.set(max(0, min(1, stage_pct / 100)))
@@ -5817,7 +6732,7 @@ v1.0
                 self.elapsed_var.set(f"Elapsed: {elapsed}")
                 self.eta_var.set(f"ETA: {eta}")
                 self.header_status_var.set(f"v{APP_VERSION}  |  Stage: {stage}")
-                self.footer_var.set(f"● {title}")
+                self.footer_var.set(f"● {t(title)}")
                 self.update_stages_display(stage, stage_pct)
         except queue.Empty:
             pass

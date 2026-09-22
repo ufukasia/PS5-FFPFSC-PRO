@@ -650,13 +650,21 @@ class PS5ContainerBuilderApp:
     def run_command_stream(self, cmd: list[str], cwd: str | None = None) -> bool:
         print(f"[INFO] Running: {' '.join(cmd)}")
         try:
+            # Force UTF-8 both ways: the child writes into a pipe, where Python
+            # would otherwise fall back to the ANSI locale codepage and crash on
+            # the icons mkpfs prints.
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8:replace"
             self.current_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 bufsize=1,
-                cwd=cwd
+                cwd=cwd,
+                env=env
             )
             
             for line in read_stream_by_lines(self.current_process.stdout):
