@@ -10,14 +10,97 @@
   <img src="https://img.shields.io/badge/Linux-Supported-yellow">
   <img src="https://img.shields.io/badge/macOS-Supported-lightgrey">
   <img src="https://img.shields.io/badge/Backend-MkPFS%20%2B%20FFPFSC-orange">
-  <img src="https://img.shields.io/badge/Version-v1.3.0-green">
+  <img src="https://img.shields.io/badge/Version-v1.4.0-green">
+  <img src="https://img.shields.io/badge/Fork-ufukasia-blueviolet">
+  <img src="https://img.shields.io/badge/UI-EN%20%2F%20TR-informational">
 </p>
 
 <p align="center">
-  <a href="https://github.com/KINGDKAK/PS5-FFPFSC-PRO/releases">📥 Download</a> •
+  <a href="https://github.com/ufukasia/PS5-FFPFSC-PRO/releases">📥 Download</a> •
+  <a href="https://github.com/KINGDKAK/PS5-FFPFSC-PRO">⬆️ Upstream project</a> •
   <a href="https://youtube.com/@KINGDKAK">📺 YouTube</a> •
   <a href="https://ko-fi.com/KINGDKAK">☕ Ko-fi</a>
 </p>
+
+---
+
+## 🍴 About this fork / Bu fork hakkında
+
+This is a fork of [KINGDKAK/PS5-FFPFSC-PRO](https://github.com/KINGDKAK/PS5-FFPFSC-PRO).
+The compression backend (MkPFS / Bizkut) is untouched — everything below is
+interface, workflow and bug-fix work on top of upstream **v1.3.0**.
+
+Bu depo [KINGDKAK/PS5-FFPFSC-PRO](https://github.com/KINGDKAK/PS5-FFPFSC-PRO)
+projesinin bir fork'udur. Sıkıştırma arka ucuna (MkPFS / Bizkut) dokunulmamıştır;
+aşağıdakiler upstream **v1.3.0** üzerine eklenen arayüz, iş akışı ve hata
+düzeltmeleridir.
+
+### ↔ Flexible layout — Esnek tasarım
+
+* The window opens to fit the usable desktop and honours Windows display
+  scaling. The old fixed 1400x960 became 1750x1200 at 125% scaling and pushed
+  controls (the CPU-core slider among them) off the screen.
+* The three columns — queue, progress, details — sit behind **draggable sashes**,
+  so any column can be widened or narrowed.
+* Every column scrolls independently, so nothing is stranded below the window
+  edge on a small screen. Labels re-wrap live as a column is resized.
+* New **Reset Layout** button restores the default pane sizes.
+* The queue list gained a horizontal scrollbar, and the mouse wheel scrolls the
+  list under the pointer instead of the column behind it.
+
+*Pencere, masaüstüne ve Windows ölçeklemesine göre açılır; üç sütun sürüklenerek
+genişletilip daraltılabilir, her sütun ayrı kaydırılır, "Reset Layout" ile
+varsayılan düzene dönülür.*
+
+### 🌍 Turkish / English interface — Türkçe / İngilizce arayüz
+
+* An **EN / TR** button in the header switches the whole interface live, and the
+  choice is remembered between runs.
+* Backend log output stays English on purpose, so logs can still be shared for
+  support.
+
+*Başlıktaki EN / TR düğmesi arayüzü anında değiştirir ve seçim kaydedilir.*
+
+### ⏭ Skip already-compressed games — Aynı oyunu tekrar sıkıştırmama
+
+* New option **"Skip games that are already compressed"** (on by default).
+* Finished games are dropped from the queue before a batch starts, and the
+  backend enforces the same rule through a new `--skip-existing` flag — which
+  also covers `--batch` runs the GUI cannot pre-check.
+* Both the old `TITLEID.ffpfsc` and the new `TITLEID-Game Name.ffpfsc` layouts
+  are recognised, so games compressed by earlier versions still count as done.
+
+*Çıktı klasöründe zaten .ffpfsc'si olan oyunlar yeniden sıkıştırılmaz.*
+
+### 🏷 Output named after the game — Oyun ismiyle çıktı
+
+* Output is now `TITLEID-Game Name.ffpfsc` instead of `TITLEID.ffpfsc`, read from
+  the game's own `sce_sys/param.json` and falling back to the folder name.
+* Characters Windows rejects are replaced rather than dropped
+  (`NieR:Automata` → `NieR Automata`), the name is trimmed to a sane length, and
+  a title ID already present in the source name is not repeated.
+
+*Çıktı dosyası `OYUNKODU-Oyun Adı.ffpfsc` biçiminde adlandırılır.*
+
+### 🩹 Bug fixes — Hata düzeltmeleri
+
+* **UnicodeEncodeError on Turkish Windows** — with stdout redirected to a pipe,
+  Python fell back to the ANSI codepage (cp1254) and crashed on the icons mkpfs
+  prints, killing builds that had actually finished. All pipes are UTF-8 now and
+  log output degrades instead of raising.
+* **exFAT is no longer flagged as 4 GB limited** — only FAT32/FAT caps a single
+  file at 4 GB; exFAT exists to lift that limit and is a valid output target.
+* **Free space is checked the way mkpfs checks it** — mkpfs reserves free space
+  equal to the full *uncompressed* source size before it starts, so that is what
+  is verified, before the run rather than hours into it.
+* **The space dialog blocks a doomed run** instead of auto-proceeding, and says
+  what is missing and by how much.
+* **Error hints report the cause that actually holds** rather than blaming the
+  output filesystem for every failure.
+* Settings toggled in the main window (skip existing, auto-clear temp) are saved
+  immediately.
+* The updater tracks this fork's releases, and treats "no release published yet"
+  as up to date instead of an error.
 
 ---
 
@@ -53,6 +136,10 @@ Whether you're compressing a single game, batch processing multiple titles, or b
 ## ✨ Features
 
 * Compress PS5 game dumps into .ffpfsc
+* Flexible layout — resizable, independently scrollable columns (fork)
+* English / Turkish interface (fork)
+* Skips games that are already compressed (fork)
+* Output named after the game: `TITLEID-Game Name.ffpfsc` (fork)
 * Supports game folders, .exfat, .ffpkg, .zip, .rar, and .7z
 * Drag-and-drop support
 * Batch compression
@@ -183,7 +270,7 @@ Features include:
 ## 🚀 Getting Started
 
 1. Download the latest release.
-2. Run `PS5_FFPFSC_PRO.exe`
+2. Run `PS5_FFPFSC_PRO.exe` — or `RUN.bat` to start `PS5_FFPFSC_PRO_v1.4.0.py` from source
 3. Add a game folder, archive, `.exfat`, or `.ffpkg` image.
 4. Select your compression settings.
 5. Click **Start**.
@@ -227,6 +314,11 @@ The application provides detailed error messages and recommended fixes whenever 
 
 * MkPFS
 * Bizkut
+
+### Upstream
+
+* Original project and ongoing development: [KINGDKAK](https://github.com/KINGDKAK/PS5-FFPFSC-PRO)
+* This fork: [ufukasia](https://github.com/ufukasia/PS5-FFPFSC-PRO)
 
 ### Community
 
