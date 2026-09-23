@@ -81,6 +81,8 @@ FIXED
     auto-clear temp) are saved the moment they are toggled
   • The updater now tracks this fork's releases, and a repository with
     no published release yet reports "up to date" instead of an error
+  • Fixed "'Text' object is not callable" poll loop crash caused by
+    local variable shadowing the global translation function t()
 
 TÜRKÇE ÖZET
 
@@ -91,8 +93,9 @@ TÜRKÇE ÖZET
   • Zaten sıkıştırılmış oyunlar atlanıyor (kuyrukta ve arka uçta)
   • Çıktı dosyası oyun adıyla: OYUNKODU-Oyun Adı.ffpfsc
   • Türkçe Windows'ta derlemeyi öldüren UTF-8 hatası, exFAT'in yanlışlıkla
-    4 GB sınırlı sayılması, boş alan denetiminin yanlış hesaplanması ve
-    bir dizi başka hata düzeltildi
+    4 GB sınırlı sayılması, boş alan denetiminin yanlış hesaplanması,
+    _poll döngüsündeki 'Text' object is not callable hatası ve bir dizi
+    başka hata düzeltildi
 
 ────────────────────────────────────────────────────────────────────────
   v1.3.0
