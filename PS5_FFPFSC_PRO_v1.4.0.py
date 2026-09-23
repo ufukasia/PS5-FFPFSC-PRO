@@ -6681,11 +6681,11 @@ v1.0
 
         processed = 0
         try:
-            t = self.log_box._textbox
+            log_tb = self.log_box._textbox
             while processed < 50:
                 tag, msg = self.log_q.get_nowait()
                 line = f"[{now_time()}] [{tag}] {msg}\n"
-                t.insert("end", line, (tag,))
+                log_tb.insert("end", line, (tag,))
                 self.visible_log_lines += 1
                 processed += 1
         except (queue.Empty, AttributeError):

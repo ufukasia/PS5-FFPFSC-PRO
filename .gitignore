@@ -12,6 +12,7 @@ build/
 # PyInstaller output
 dist/
 build/
+*.exe
 
 # App data / logs (generated at runtime)
 *.log
